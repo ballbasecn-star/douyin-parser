@@ -19,8 +19,9 @@ def parse(
     service_url: str = None,       # 保留接口兼容性，已不再使用
     enable_transcript: bool = True,
     use_cloud: bool = False,
+    cloud_provider: str = "groq",
     model_size: str = "large-v3",
-    groq_api_key: str = None,
+    cloud_api_key: str = None,
 ) -> Optional[VideoInfo]:
     """
     解析抖音视频信息
@@ -29,9 +30,10 @@ def parse(
         share_text: 分享文本或链接
         service_url: (已废弃) 远程服务地址
         enable_transcript: 是否转录视频内语音
-        use_cloud: 是否使用 Groq 云端转录
+        use_cloud: 是否使用云端转录
+        cloud_provider: 云服务商 (groq / siliconflow)
         model_size: 本地转录模型大小
-        groq_api_key: Groq API Key
+        cloud_api_key: 云端 API Key
 
     Returns:
         VideoInfo 对象，失败返回 None
@@ -58,9 +60,10 @@ def parse(
                 transcript = transcribe_video(
                     video_url=download_url,
                     use_cloud=use_cloud,
+                    cloud_provider=cloud_provider,
                     model_size=model_size,
-                    groq_api_key=groq_api_key,
-                    is_direct_url=True,  # 标记这是直接下载链接
+                    cloud_api_key=cloud_api_key,
+                    is_direct_url=True,
                 )
                 if transcript:
                     video_info.transcript = transcript

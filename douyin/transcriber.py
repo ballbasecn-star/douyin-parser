@@ -221,51 +221,79 @@ def transcribe_local(audio_path: str, model_size: str = "large-v3") -> Optional[
         return None
 
 
-def transcribe_cloud(audio_path: str, api_key: str = None) -> Optional[str]:
+# 云端服务商配置
+CLOUD_PROVIDERS = {
+    "groq": {
+        "name": "Groq",
+        "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+        "model": "whisper-large-v3-turbo",
+        "env_key": "GROQ_API_KEY",
+        "signup": "https://console.groq.com/keys",
+    },
+    "siliconflow": {
+        "name": "SiliconFlow",
+        "url": "https://api.siliconflow.cn/v1/audio/transcriptions",
+        "model": "FunAudioLLM/SenseVoiceSmall",
+        "env_key": "SILICONFLOW_API_KEY",
+        "signup": "https://cloud.siliconflow.cn",
+    },
+}
+
+
+def transcribe_cloud(
+    audio_path: str,
+    api_key: str = None,
+    cloud_provider: str = "groq",
+) -> Optional[str]:
     """
-    使用 Groq Whisper API 云端转录
+    使用云端 Whisper API 转录（支持 Groq 和 SiliconFlow）
 
     Args:
         audio_path: 音频文件路径
-        api_key: Groq API Key
+        api_key: API Key（不传则从环境变量读取）
+        cloud_provider: 云服务商 (groq / siliconflow)
 
     Returns:
         转录文本，失败返回 None
     """
-    api_key = api_key or os.environ.get("GROQ_API_KEY")
+    provider = CLOUD_PROVIDERS.get(cloud_provider)
+    if not provider:
+        logger.error(f"不支持的云服务商: {cloud_provider}，可选: {', '.join(CLOUD_PROVIDERS.keys())}")
+        return None
+
+    api_key = api_key or os.environ.get(provider["env_key"])
     if not api_key:
-        logger.error("GROQ_API_KEY 未设置。获取地址: https://console.groq.com/keys")
+        logger.error(f"{provider['env_key']} 未设置。获取地址: {provider['signup']}")
         return None
 
     try:
         import requests
 
-        logger.info("调用 Groq Whisper API...")
+        logger.info(f"调用 {provider['name']} Whisper API...")
 
-        url = "https://api.groq.com/openai/v1/audio/transcriptions"
         headers = {"Authorization": f"Bearer {api_key}"}
 
         with open(audio_path, "rb") as f:
             files = {"file": (os.path.basename(audio_path), f, "audio/wav")}
             data = {
-                "model": "whisper-large-v3-turbo",
+                "model": provider["model"],
                 "language": "zh",
                 "response_format": "text",
             }
 
             response = requests.post(
-                url, headers=headers, files=files, data=data, timeout=120
+                provider["url"], headers=headers, files=files, data=data, timeout=120
             )
 
         if response.status_code == 200:
             text = response.text.strip()
-            logger.info(f"云端转录完成: {len(text)} 字")
+            logger.info(f"{provider['name']} 转录完成: {len(text)} 字")
             return text
         else:
-            logger.error(f"Groq API 错误: {response.status_code} - {response.text[:200]}")
+            logger.error(f"{provider['name']} API 错误: {response.status_code} - {response.text[:200]}")
 
     except Exception as e:
-        logger.error(f"云端转录失败: {e}")
+        logger.error(f"{provider['name']} 转录失败: {e}")
 
     return None
 
@@ -273,8 +301,9 @@ def transcribe_cloud(audio_path: str, api_key: str = None) -> Optional[str]:
 def transcribe_video(
     video_url: str,
     use_cloud: bool = False,
+    cloud_provider: str = "groq",
     model_size: str = "large-v3",
-    groq_api_key: str = None,
+    cloud_api_key: str = None,
     is_direct_url: bool = False,
 ) -> Optional[str]:
     """
@@ -285,9 +314,10 @@ def transcribe_video(
 
     Args:
         video_url: 视频下载链接
-        use_cloud: 是否使用云端 API (Groq)
+        use_cloud: 是否使用云端 API
+        cloud_provider: 云服务商 (groq / siliconflow)
         model_size: 本地模型大小
-        groq_api_key: Groq API Key
+        cloud_api_key: 云端 API Key
         is_direct_url: 是否为直接下载链接
 
     Returns:
@@ -313,7 +343,7 @@ def transcribe_video(
 
         # 转录
         if use_cloud:
-            return transcribe_cloud(audio_path, groq_api_key)
+            return transcribe_cloud(audio_path, cloud_api_key, cloud_provider)
         else:
             return transcribe_local(audio_path, model_size)
 

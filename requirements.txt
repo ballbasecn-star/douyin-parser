@@ -9,3 +9,6 @@ gmssl>=3.2.0
 
 # 本地语音转录（可选 - 使用 --no-transcript 跳过）
 faster-whisper>=1.0.0
+
+# Web 服务
+flask>=3.0.0

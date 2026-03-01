@@ -6,6 +6,7 @@
     python main.py "分享文本"                       # 基本信息 + 语音转录
     python main.py --no-transcript "分享文本"        # 仅基本信息
     python main.py --cloud "分享文本"                # 云端转录 (Groq)
+    python main.py --cloud --cloud-provider siliconflow "分享文本"  # SiliconFlow 转录
     python main.py --json "分享文本"                 # JSON 输出
 
 Cookie 管理:
@@ -110,7 +111,10 @@ def handle_parse(args):
     parser.add_argument("text", nargs="?", help="抖音分享文本或链接")
     parser.add_argument("--json", action="store_true", help="以 JSON 格式输出")
     parser.add_argument("--no-transcript", action="store_true", help="不转录视频内语音")
-    parser.add_argument("--cloud", action="store_true", help="使用 Groq 云端 API 转录")
+    parser.add_argument("--cloud", action="store_true", help="使用云端 API 转录")
+    parser.add_argument("--cloud-provider", default="groq",
+                        choices=["groq", "siliconflow"],
+                        help="云端服务商 (默认: groq)")
     parser.add_argument("--model", default="large-v3",
                         choices=["tiny", "base", "small", "medium", "large-v3"],
                         help="本地转录模型大小 (默认: large-v3)")
@@ -138,10 +142,23 @@ def handle_parse(args):
     # 提示转录模式
     enable_transcript = not parsed.no_transcript
     if enable_transcript:
-        mode = "☁️ Groq 云端" if parsed.cloud else f"💻 本地 ({parsed.model})"
+        if parsed.cloud:
+            provider_name = "Groq" if parsed.cloud_provider == "groq" else "SiliconFlow"
+            mode = f"☁️ {provider_name} 云端"
+        else:
+            mode = f"💻 本地 ({parsed.model})"
         print(f"\n🔍 正在解析... [转录模式: {mode}]\n")
     else:
         print("\n🔍 正在解析... [仅基本信息]\n")
+
+    # 确定 API Key
+    if parsed.cloud:
+        if parsed.cloud_provider == "siliconflow":
+            cloud_api_key = os.environ.get("SILICONFLOW_API_KEY")
+        else:
+            cloud_api_key = os.environ.get("GROQ_API_KEY")
+    else:
+        cloud_api_key = None
 
     # 解析
     result = parse(
@@ -149,8 +166,9 @@ def handle_parse(args):
         service_url=parsed.api_url,
         enable_transcript=enable_transcript,
         use_cloud=parsed.cloud,
+        cloud_provider=parsed.cloud_provider,
         model_size=parsed.model,
-        groq_api_key=os.environ.get("GROQ_API_KEY"),
+        cloud_api_key=cloud_api_key,
     )
 
     if not result:
