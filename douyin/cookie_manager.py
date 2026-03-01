@@ -116,6 +116,20 @@ def start_webhook_server(port: int = 5555, cookie_manager: CookieManager = None)
         cookie_manager = CookieManager()
 
     class WebhookHandler(BaseHTTPRequestHandler):
+        def _send_cors_headers(self):
+            """添加 CORS 响应头，允许 Chrome 扩展跨域请求"""
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Max-Age", "86400")
+
+        def do_OPTIONS(self):
+            """处理 CORS 预检请求"""
+            self.send_response(200)
+            self._send_cors_headers()
+            self.end_headers()
+            logger.debug("✅ CORS 预检请求已通过")
+
         def do_POST(self):
             try:
                 content_length = int(self.headers.get("Content-Length", 0))
@@ -129,6 +143,7 @@ def start_webhook_server(port: int = 5555, cookie_manager: CookieManager = None)
                     cookie_manager.save_cookie(cookie, source="webhook")
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
+                    self._send_cors_headers()
                     self.end_headers()
                     self.wfile.write(json.dumps({
                         "status": "ok",
@@ -138,6 +153,7 @@ def start_webhook_server(port: int = 5555, cookie_manager: CookieManager = None)
                 else:
                     self.send_response(400)
                     self.send_header("Content-Type", "application/json")
+                    self._send_cors_headers()
                     self.end_headers()
                     self.wfile.write(json.dumps({
                         "status": "error",
@@ -147,12 +163,14 @@ def start_webhook_server(port: int = 5555, cookie_manager: CookieManager = None)
             except Exception as e:
                 logger.error(f"Webhook 处理错误: {e}")
                 self.send_response(500)
+                self._send_cors_headers()
                 self.end_headers()
 
         def do_GET(self):
             """健康检查"""
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
+            self._send_cors_headers()
             self.end_headers()
             info = cookie_manager.get_cookie_info()
             self.wfile.write(json.dumps({
