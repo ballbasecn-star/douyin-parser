@@ -1,0 +1,11 @@
+# 抖音视频解析工具 - Python 依赖
+
+# 核心
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# a_bogus 签名算法所需
+gmssl>=3.2.0
+
+# 本地语音转录（可选 - 使用 --no-transcript 跳过）
+faster-whisper>=1.0.0
