@@ -37,7 +37,7 @@ def extract_audio_from_url(video_url: str) -> Optional[str]:
     Returns:
         音频文件路径，失败返回 None
     """
-    audio_path = tempfile.NamedTemporaryFile(suffix=".wav", delete=False).name
+    audio_path = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False).name
 
     try:
         logger.info("⚡ 从 URL 直接提取音频流（跳过视频下载）...")
@@ -47,9 +47,10 @@ def extract_audio_from_url(video_url: str) -> Optional[str]:
             "-headers", FFMPEG_HEADERS,
             "-i", video_url,
             "-vn",                    # 不处理视频轨道
-            "-acodec", "pcm_s16le",   # 16-bit PCM
+            "-acodec", "libmp3lame",  # MP3 压缩（大幅减小文件）
             "-ar", "16000",           # 16kHz 采样率
             "-ac", "1",               # 单声道
+            "-b:a", "64k",            # 64kbps 比特率
             "-y",                     # 覆盖
             audio_path,
         ]
@@ -282,7 +283,7 @@ def transcribe_cloud(
             }
 
             response = requests.post(
-                provider["url"], headers=headers, files=files, data=data, timeout=120
+                provider["url"], headers=headers, files=files, data=data, timeout=300
             )
 
         if response.status_code == 200:
