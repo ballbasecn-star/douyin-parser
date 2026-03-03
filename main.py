@@ -111,6 +111,7 @@ def handle_parse(args):
     parser.add_argument("text", nargs="?", help="抖音分享文本或链接")
     parser.add_argument("--json", action="store_true", help="以 JSON 格式输出")
     parser.add_argument("--no-transcript", action="store_true", help="不转录视频内语音")
+    parser.add_argument("--analyze", action="store_true", help="使用大模型进行爆款文案拆解分析")
     parser.add_argument("--cloud", action="store_true", help="使用云端 API 转录")
     parser.add_argument("--cloud-provider", default="groq",
                         choices=["groq", "siliconflow"],
@@ -141,14 +142,22 @@ def handle_parse(args):
 
     # 提示转录模式
     enable_transcript = not parsed.no_transcript
+    enable_analysis = parsed.analyze
+    
     if enable_transcript:
         if parsed.cloud:
             provider_name = "Groq" if parsed.cloud_provider == "groq" else "SiliconFlow"
             mode = f"☁️ {provider_name} 云端"
         else:
             mode = f"💻 本地 ({parsed.model})"
+            
+        if enable_analysis:
+            mode += " + 🧠 AI爆款拆解"
+            
         print(f"\n🔍 正在解析... [转录模式: {mode}]\n")
     else:
+        if enable_analysis:
+            print("⚠️ 警告: 已省略转录 (--no-transcript)，文案拆解 (--analyze) 将无效。")
         print("\n🔍 正在解析... [仅基本信息]\n")
 
     # 确定 API Key
@@ -169,6 +178,7 @@ def handle_parse(args):
         cloud_provider=parsed.cloud_provider,
         model_size=parsed.model,
         cloud_api_key=cloud_api_key,
+        enable_analysis=enable_analysis,
     )
 
     if not result:

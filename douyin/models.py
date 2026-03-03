@@ -42,6 +42,9 @@ class VideoInfo:
     # 视频内语音转录文案
     transcript: str = ""
 
+    # AI文案拆解结果 (JSON)
+    analysis: dict = field(default_factory=dict)
+
     @property
     def duration_formatted(self) -> str:
         """格式化时长 mm:ss"""
@@ -128,6 +131,36 @@ class VideoInfo:
 
         if self.share_url:
             lines.append(f"🔗 链接: {self.share_url}")
+
+        # 追加文案拆解结果
+        if self.analysis:
+            lines.append("\n" + "=" * 60)
+            lines.append("📊 爆款文案深度剖析 (AI 提供)")
+            lines.append("=" * 60)
+            hook_text = self.analysis.get("hook_text", "")
+            hook_type = self.analysis.get("hook_type", "")
+            if hook_text or hook_type:
+                lines.append(f"🎯 黄金前3秒: {hook_text} [{hook_type}]")
+            
+            structure_type = self.analysis.get("structure_type", "")
+            if structure_type:
+                lines.append(f"🏗️  内容框架: {structure_type}")
+            
+            retention_points = self.analysis.get("retention_points", [])
+            if retention_points:
+                lines.append("🔥 情绪留存点:")
+                for i, rp in enumerate(retention_points, 1):
+                    lines.append(f"   {i}. {rp}")
+            
+            scenario_expression = self.analysis.get("scenario_expression", [])
+            if scenario_expression:
+                lines.append("🎬 场景化表达:")
+                for i, se in enumerate(scenario_expression, 1):
+                    lines.append(f"   {i}. {se}")
+                    
+            cta = self.analysis.get("cta", "")
+            if cta:
+                lines.append(f"📣 互动引导: {cta}")
 
         lines.append("\n" + "=" * 60)
         return "\n".join(lines)

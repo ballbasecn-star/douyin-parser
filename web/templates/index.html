@@ -108,19 +108,35 @@
                             <option value="large-v3">large-v3 (3GB)</option>
                         </select>
                     </div>
+                    <div class="option-group" id="analyzeGroup" style="display:none">
+                        <label class="option-label"
+                            style="color: var(--accent-1); text-shadow: 0 0 10px rgba(129, 140, 248, 0.4);">🧠 AI
+                            爆款拆解</label>
+                        <label class="switch">
+                            <input type="checkbox" id="analyzeToggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- 状态提示 -->
-        <div class="status-bar" id="statusBar" style="display:none">
-            <div class="status-icon">
-                <svg class="spinner" width="16" height="16" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none"
-                        stroke-dasharray="60 200" stroke-linecap="round" />
-                </svg>
+        <!-- 状态提示与日志输出 (Terminal) -->
+        <div class="terminal-container" id="terminalContainer" style="display:none">
+            <div class="terminal-header">
+                <div class="terminal-dots">
+                    <span class="dot red"></span>
+                    <span class="dot yellow"></span>
+                    <span class="dot green"></span>
+                </div>
+                <span class="terminal-title">System Logs</span>
             </div>
-            <span class="status-text" id="statusText">正在解析...</span>
+            <div class="terminal-body" id="terminalBody">
+                <div class="log-line">
+                    <span class="log-time">[Init]</span>
+                    <span class="log-msg">准备开始解析...</span>
+                </div>
+            </div>
         </div>
 
         <!-- 结果区域 -->
@@ -201,11 +217,66 @@
                     </div>
                 </div>
 
+                <!-- 爆款分析面板 -->
+                <div class="content-block glow-border" id="analysisBlock" style="display:none">
+                    <div class="block-header" onclick="toggleBlock('analysisBody')">
+                        <h3 class="gradient-text">📊 爆款文案深度剖析 (AI)</h3>
+                        <div class="block-actions" id="analysisActions" style="display:none">
+                            <button class="copy-btn" onclick="event.stopPropagation();copyText('analysisBody')"
+                                title="复制">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" />
+                                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                                </svg>
+                            </button>
+                            <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                        </div>
+                    </div>
+                    <!-- Loading 骨架屏 -->
+                    <div class="block-body expanded skeleton-loader" id="analysisSkeleton">
+                        <div class="skeleton-line w-100"></div>
+                        <div class="skeleton-line w-75"></div>
+                        <div class="skeleton-line w-50"></div>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <span class="spinner-small"></span>
+                            <span style="color:var(--text-muted); font-size:13px">AI 模型正深度思考拆解... 约耗时 10-30 秒</span>
+                        </div>
+                    </div>
+
+                    <div class="block-body expanded analysis-body" id="analysisBody" style="display:none">
+                        <div class="analysis-item">
+                            <div class="analysis-label">🎯 黄金前3秒 <span class="tag tag-sm" id="analysisHookType"></span>
+                            </div>
+                            <div class="analysis-content highlight-box" id="analysisHookText"></div>
+                        </div>
+                        <div class="analysis-item" id="analysisStructWrapper">
+                            <div class="analysis-label">🏗️ 内容框架</div>
+                            <div class="analysis-content" id="analysisStructText"></div>
+                        </div>
+                        <div class="analysis-item" id="analysisRetentionWrapper">
+                            <div class="analysis-label">🔥 情绪留存点</div>
+                            <ul class="analysis-list" id="analysisRetentionList"></ul>
+                        </div>
+                        <div class="analysis-item" id="analysisScenarioWrapper">
+                            <div class="analysis-label">🎬 场景化表达</div>
+                            <ul class="analysis-list" id="analysisScenarioList"></ul>
+                        </div>
+                        <div class="analysis-item" id="analysisCtaWrapper">
+                            <div class="analysis-label">📣 互动引导</div>
+                            <div class="analysis-content highlight-box muted" id="analysisCtaText"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 转录 -->
                 <div class="content-block" id="transcriptBlock" style="display:none">
                     <div class="block-header" onclick="toggleBlock('transcriptBody')">
                         <h3>🎙️ 语音转录文案</h3>
-                        <div class="block-actions">
+                        <div class="block-actions" id="transcriptActions" style="display:none">
                             <button class="copy-btn" onclick="event.stopPropagation();copyText('transcriptContent')"
                                 title="复制">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -220,7 +291,17 @@
                             </svg>
                         </div>
                     </div>
-                    <div class="block-body expanded" id="transcriptBody">
+                    <!-- Loading 骨架屏 -->
+                    <div class="block-body expanded skeleton-loader" id="transcriptSkeleton">
+                        <div class="skeleton-line w-100" style="height:60px;"></div>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <span class="spinner-small"></span>
+                            <span style="color:var(--text-muted); font-size:13px"
+                                id="transcriptLoadingText">正在跑语音识别引擎...</span>
+                        </div>
+                    </div>
+
+                    <div class="block-body expanded" id="transcriptBody" style="display:none">
                         <p class="block-text" id="transcriptContent"></p>
                     </div>
                 </div>
@@ -297,6 +378,14 @@
                     <p class="setting-hint">使用 SiliconFlow 模式时需要（国内推荐）。<a href="https://cloud.siliconflow.cn"
                             target="_blank">免费注册</a></p>
                     <button class="setting-btn" onclick="saveSiliconFlowKey()">保存</button>
+                </div>
+                <!-- 拆解模型配置 -->
+                <div class="setting-group">
+                    <label class="setting-label">🧠 爆款拆解大模型</label>
+                    <input type="text" class="setting-input" id="aiModelInput" placeholder="请输入模型名称..."
+                        value="Pro/deepseek-ai/DeepSeek-V3.2">
+                    <p class="setting-hint">用于文案分析的模型名称（目前默认走 SiliconFlow 接口）。<br>推荐：Pro/deepseek-ai/DeepSeek-V3.2</p>
+                    <button class="setting-btn" onclick="saveAiModel()">保存</button>
                 </div>
             </div>
         </div>

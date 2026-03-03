@@ -810,6 +810,168 @@ body {
     background: var(--bg-card-hover);
 }
 
+/* ---------- Analysis Premium Elements ---------- */
+
+/* Custom Toggle Switch for Analysis */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    margin-left: 6px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border);
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 2px;
+    bottom: 2px;
+    background-color: var(--text-dim);
+    transition: .4s;
+}
+
+.slider.round {
+    border-radius: 20px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: var(--accent-1);
+    border-color: var(--accent-1);
+    box-shadow: 0 0 10px rgba(129, 140, 248, 0.5);
+}
+
+input:checked+.slider:before {
+    transform: translateX(16px);
+    background-color: white;
+}
+
+/* Glowing Border for Analysis Block */
+.glow-border {
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid rgba(129, 140, 248, 0.3);
+    box-shadow: 0 0 20px rgba(129, 140, 248, 0.1);
+}
+
+.glow-border::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(129, 140, 248, 0.5), rgba(192, 132, 252, 0.5));
+    z-index: -1;
+    opacity: 0.5;
+    filter: blur(8px);
+    transition: opacity 0.3s ease;
+}
+
+/* Gradient Text */
+.gradient-text {
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+}
+
+/* Analysis Items */
+.analysis-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.analysis-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.analysis-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.tag-sm {
+    font-size: 11px;
+    padding: 2px 8px;
+}
+
+.analysis-content {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-dim);
+}
+
+.highlight-box {
+    padding: 12px 16px;
+    background: rgba(129, 140, 248, 0.08);
+    border-left: 3px solid var(--accent-1);
+    border-radius: 4px;
+    color: #f1f5f9;
+    font-style: italic;
+}
+
+.highlight-box.muted {
+    background: rgba(255, 255, 255, 0.03);
+    border-left-color: var(--text-muted);
+    font-style: normal;
+}
+
+.analysis-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-left: 0;
+}
+
+.analysis-list li {
+    position: relative;
+    padding-left: 20px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-dim);
+}
+
+.analysis-list li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--accent-2);
+}
+
 .history-cover {
     width: 40px;
     height: 40px;
@@ -1069,4 +1231,156 @@ body {
 
 .footer-text {
     font-weight: 400;
+}
+
+/* ---------- Terminal Output & Loading Skeletons ---------- */
+
+/* SSE Terminal Container */
+.terminal-container {
+    background: #0d1117;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    transition: all 0.3s ease;
+}
+
+.terminal-header {
+    background: #161b22;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.terminal-dots {
+    display: flex;
+    gap: 6px;
+    margin-right: 12px;
+}
+
+.terminal-dots .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.dot.red {
+    background-color: #ff5f56;
+}
+
+.dot.yellow {
+    background-color: #ffbd2e;
+}
+
+.dot.green {
+    background-color: #27c93f;
+}
+
+.terminal-title {
+    color: #8b949e;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.terminal-body {
+    padding: 12px 16px;
+    max-height: 200px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.terminal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.terminal-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.log-line {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 4px;
+    word-break: break-all;
+    display: flex;
+    gap: 12px;
+}
+
+.log-time {
+    color: #8b949e;
+    flex-shrink: 0;
+}
+
+.log-msg {
+    color: #c9d1d9;
+}
+
+.log-msg.success {
+    color: #56d364;
+}
+
+.log-msg.error {
+    color: #f85149;
+}
+
+.log-msg.warning {
+    color: #e3b341;
+}
+
+.log-msg.info {
+    color: #58a6ff;
+}
+
+/* Skeleton Loaders */
+.skeleton-loader {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+}
+
+.skeleton-line {
+    height: 20px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 4px;
+}
+
+.w-100 {
+    width: 100%;
+}
+
+.w-75 {
+    width: 75%;
+}
+
+.w-50 {
+    width: 50%;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Small Spinner inside blocks */
+.spinner-small {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--accent-1);
+    animation: spin 1s ease-in-out infinite;
+    display: inline-block;
 }

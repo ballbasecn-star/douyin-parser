@@ -10,8 +10,9 @@ import os
 import sys
 import threading
 from datetime import datetime
+import queue
 
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template, send_from_directory, Response, stream_with_context
 
 # 将项目根目录加入 path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -60,9 +61,11 @@ def api_parse():
 
     # 解析选项
     enable_transcript = data.get("transcript", False)
+    enable_analysis = data.get("analyze", False)
     use_cloud = data.get("cloud", False)
     cloud_provider = data.get("cloud_provider", "groq")
     model_size = data.get("model", "small")
+    ai_model = data.get("ai_model", "Pro/deepseek-ai/DeepSeek-V3.2")
 
     # 确定 API Key
     if use_cloud:
@@ -73,33 +76,46 @@ def api_parse():
     else:
         cloud_api_key = None
 
-    try:
-        result = parse(
-            share_text=url,
-            enable_transcript=enable_transcript,
-            use_cloud=use_cloud,
-            cloud_provider=cloud_provider,
-            model_size=model_size,
-            cloud_api_key=cloud_api_key,
-        )
+    def generate():
+        q = queue.Queue()
 
-        if result:
-            return jsonify({
-                "success": True,
-                "data": result.to_dict(),
-            })
-        else:
-            return jsonify({
-                "success": False,
-                "error": "解析失败，请检查链接是否有效",
-            }), 400
+        def progress_callback(info):
+            q.put(info)
 
-    except Exception as e:
-        logger.error(f"API 解析错误: {e}")
-        return jsonify({
-            "success": False,
-            "error": str(e),
-        }), 500
+        def worker():
+            try:
+                result = parse(
+                    share_text=url,
+                    enable_transcript=enable_transcript,
+                    use_cloud=use_cloud,
+                    cloud_provider=cloud_provider,
+                    model_size=model_size,
+                    cloud_api_key=cloud_api_key,
+                    enable_analysis=enable_analysis,
+                    ai_model=ai_model,
+                    progress_callback=progress_callback
+                )
+                if result:
+                    q.put({"type": "finish", "success": True})
+                else:
+                    q.put({"type": "finish", "success": False, "error": "解析失败，请检查链接是否有效"})
+            except Exception as e:
+                logger.error(f"API 解析错误: {e}")
+                q.put({"type": "finish", "success": False, "error": str(e)})
+
+        # 启动后台线程执行解析任务
+        threading.Thread(target=worker, daemon=True).start()
+
+        # 读取队列并推送 SSE 事件
+        while True:
+            item = q.get()
+            if item["type"] == "finish":
+                yield f"data: {json.dumps(item, ensure_ascii=False)}\n\n"
+                break
+            
+            yield f"data: {json.dumps(item, ensure_ascii=False)}\n\n"
+
+    return Response(stream_with_context(generate()), mimetype="text/event-stream")
 
 
 @app.route("/api/cookie/status")

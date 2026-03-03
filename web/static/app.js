@@ -12,6 +12,36 @@ function proxyImg(url) {
     return '/api/proxy/image?url=' + encodeURIComponent(url);
 }
 
+// ==================== Terminal Logs ====================
+function clearLog() {
+    const body = document.getElementById('terminalBody');
+    body.innerHTML = '';
+}
+
+function appendLog(msg, type = 'info') {
+    const body = document.getElementById('terminalBody');
+    const line = document.createElement('div');
+    line.className = 'log-line';
+
+    // Time
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'log-time';
+    const now = new Date();
+    timeSpan.textContent = `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
+
+    // Msg
+    const msgSpan = document.createElement('span');
+    msgSpan.className = `log-msg ${type}`;
+    msgSpan.textContent = msg;
+
+    line.appendChild(timeSpan);
+    line.appendChild(msgSpan);
+    body.appendChild(line);
+
+    // Scroll to bottom
+    body.scrollTop = body.scrollHeight;
+}
+
 // ==================== Init ====================
 document.addEventListener('DOMContentLoaded', () => {
     checkCookieStatus();
@@ -77,26 +107,37 @@ async function parseVideo() {
     document.getElementById('resultSection').style.display = 'none';
     document.getElementById('errorCard').style.display = 'none';
 
-    const statusBar = document.getElementById('statusBar');
-    const statusText = document.getElementById('statusText');
-    statusBar.style.display = 'flex';
+    // 开启终端和骨架屏初始状态
+    const terminal = document.getElementById('terminalContainer');
+    terminal.style.display = 'block';
+    clearLog();
+
+    document.getElementById('transcriptBlock').style.display = 'none';
+    document.getElementById('analysisBlock').style.display = 'none';
+    document.getElementById('transcriptSkeleton').style.display = 'flex';
+    document.getElementById('analysisSkeleton').style.display = 'flex';
+    document.getElementById('transcriptBody').style.display = 'none';
+    document.getElementById('analysisBody').style.display = 'none';
+    document.getElementById('transcriptActions').style.display = 'none';
+    document.getElementById('analysisActions').style.display = 'none';
 
     const enableTranscript = transcriptMode !== 'off';
     const useCloud = transcriptMode === 'groq' || transcriptMode === 'siliconflow';
     const cloudProvider = useCloud ? transcriptMode : 'groq';
     const model = document.getElementById('modelSelect').value;
+    const aiModel = document.getElementById('aiModelInput') ? document.getElementById('aiModelInput').value : "Pro/deepseek-ai/DeepSeek-V3.2";
 
-    statusText.textContent = enableTranscript
-        ? `正在解析并转录 ${useCloud ? `(${cloudProvider === 'siliconflow' ? 'SiliconFlow' : 'Groq'} 云端)` : `(本地 ${model})`}...`
-        : '正在解析视频信息...';
+    appendLog('系统初始化，准备发送解析请求...', 'info');
 
     try {
         const payload = {
             url,
             transcript: enableTranscript,
+            analyze: document.getElementById('analyzeToggle').checked && enableTranscript,
             cloud: useCloud,
             cloud_provider: cloudProvider,
             model,
+            ai_model: aiModel
         };
 
         const res = await fetch('/api/parse', {
@@ -105,44 +146,103 @@ async function parseVideo() {
             body: JSON.stringify(payload),
         });
 
-        const json = await res.json();
+        if (!res.body) throw new Error("ReadableStream 缺失，无法处理流");
 
-        if (json.success) {
-            currentData = json.data;
-            renderResult(json.data);
-            addToHistory(json.data);
-            showToast('解析成功 ✅');
-        } else {
-            showError(json.error || '解析失败');
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+
+            let boundary = buffer.indexOf('\n\n');
+            while (boundary !== -1) {
+                const chunk = buffer.slice(0, boundary);
+                buffer = buffer.slice(boundary + 2);
+
+                if (chunk.startsWith('data: ')) {
+                    const dataStr = chunk.slice(6);
+                    try {
+                        const packet = JSON.parse(dataStr);
+                        handleSSEPacket(packet, enableTranscript, document.getElementById('analyzeToggle').checked && enableTranscript);
+                    } catch (e) {
+                        console.error('SSE JSON 解析错误:', e, dataStr);
+                    }
+                }
+                boundary = buffer.indexOf('\n\n');
+            }
         }
+
     } catch (e) {
         showError(`请求失败: ${e.message}`);
+        appendLog(`❌ 请求异常坠机: ${e.message}`, 'error');
     } finally {
         btn.disabled = false;
         btnText.style.display = 'inline';
         btnLoader.style.display = 'none';
-        statusBar.style.display = 'none';
     }
 }
 
-// ==================== Render Result ====================
-function renderResult(data) {
-    document.getElementById('resultSection').style.display = 'block';
+// 处理来自后端的 SSE 数据包
+function handleSSEPacket(packet, expectTranscript, expectAnalysis) {
+    if (packet.type === 'log') {
+        const msg = packet.message;
+        let type = 'info';
+        if (msg.includes('❌') || msg.includes('失败')) type = 'error';
+        if (msg.includes('⚠️')) type = 'warning';
+        if (msg.includes('✅') || msg.includes('🎉')) type = 'success';
+        appendLog(msg, type);
+    }
+    else if (packet.type === 'data') {
+        currentData = Object.assign(currentData || {}, packet.data);
 
-    // Cover (通过代理加载)
+        if (packet.step === 'video_info') {
+            document.getElementById('resultSection').style.display = 'block';
+            renderBaseInfo(currentData);
+
+            if (expectTranscript) document.getElementById('transcriptBlock').style.display = 'block';
+            if (expectAnalysis) document.getElementById('analysisBlock').style.display = 'block';
+        }
+        else if (packet.step === 'transcript') {
+            document.getElementById('transcriptSkeleton').style.display = 'none';
+            document.getElementById('transcriptBody').style.display = 'block';
+            document.getElementById('transcriptActions').style.display = 'flex';
+            renderTranscript(currentData);
+        }
+        else if (packet.step === 'analysis') {
+            document.getElementById('analysisSkeleton').style.display = 'none';
+            document.getElementById('analysisBody').style.display = 'flex';
+            document.getElementById('analysisActions').style.display = 'flex';
+            renderAnalysis(currentData);
+        }
+    }
+    else if (packet.type === 'finish') {
+        if (packet.success) {
+            addToHistory(currentData);
+            showToast('流程圆满完成 ✅');
+            appendLog('🎉 任务全部完成。', 'success');
+        } else {
+            showError(packet.error || '解析失败');
+            appendLog(`❌ 流程被中断: ${packet.error}`, 'error');
+            // Hide skeletons if failed
+            document.getElementById('transcriptSkeleton').style.display = 'none';
+            document.getElementById('analysisSkeleton').style.display = 'none';
+        }
+    }
+}
+
+// ==================== Sub Renderers ====================
+function renderBaseInfo(data) {
     const coverImg = document.getElementById('resultCover');
     if (data.cover_url) {
         coverImg.src = proxyImg(data.cover_url);
         coverImg.onerror = () => { coverImg.style.display = 'none'; };
     }
-
-    // Duration
     document.getElementById('resultDuration').textContent = data.duration_formatted || '00:00';
-
-    // Title
     document.getElementById('resultTitle').textContent = data.title || data.description || '';
-
-    // Author
     document.getElementById('authorName').textContent = data.author || '';
     document.getElementById('authorId').textContent = data.author_id ? `@${data.author_id}` : '';
 
@@ -153,17 +253,13 @@ function renderResult(data) {
         avatarEl.textContent = '👤';
     }
 
-    // Meta
     document.querySelector('#resultDate span').textContent = data.create_time_formatted || '';
     document.querySelector('#resultVideoId span').textContent = data.video_id || '';
-
-    // Stats
     document.getElementById('statLikes').textContent = formatNumber(data.like_count);
     document.getElementById('statComments').textContent = formatNumber(data.comment_count);
     document.getElementById('statShares').textContent = formatNumber(data.share_count);
     document.getElementById('statCollects').textContent = formatNumber(data.collect_count);
 
-    // Tags
     const tagsRow = document.getElementById('tagsRow');
     tagsRow.innerHTML = '';
     if (data.hashtags && data.hashtags.length) {
@@ -175,23 +271,80 @@ function renderResult(data) {
         });
     }
 
-    // Description
     document.getElementById('descContent').textContent = data.description || '';
-
-    // Transcript
-    const transcriptBlock = document.getElementById('transcriptBlock');
-    if (data.transcript) {
-        transcriptBlock.style.display = 'block';
-        document.getElementById('transcriptContent').textContent = data.transcript;
-    } else {
-        transcriptBlock.style.display = 'none';
-    }
-
-    // Open original
     document.getElementById('openOriginal').href = data.share_url || `https://www.douyin.com/video/${data.video_id}`;
 
-    // Scroll to result
+    // 只在第一次展示基础信息时滚动
     document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderTranscript(data) {
+    if (data.transcript) {
+        document.getElementById('transcriptContent').textContent = data.transcript;
+    }
+}
+
+function renderAnalysis(data) {
+    const a = data.analysis;
+    if (!a) return;
+
+    // Hook
+    document.getElementById('analysisHookText').textContent = a.hook_text || '无';
+    const typeEl = document.getElementById('analysisHookType');
+    if (a.hook_type) {
+        typeEl.style.display = 'inline-block';
+        typeEl.textContent = a.hook_type;
+    } else {
+        typeEl.style.display = 'none';
+    }
+
+    // Structure
+    const structWrapper = document.getElementById('analysisStructWrapper');
+    if (a.structure_type) {
+        structWrapper.style.display = 'block';
+        document.getElementById('analysisStructText').textContent = a.structure_type;
+    } else {
+        structWrapper.style.display = 'none';
+    }
+
+    // Retention
+    const retWrapper = document.getElementById('analysisRetentionWrapper');
+    if (a.retention_points && a.retention_points.length > 0) {
+        retWrapper.style.display = 'block';
+        const ul = document.getElementById('analysisRetentionList');
+        ul.innerHTML = '';
+        a.retention_points.forEach(pt => {
+            const li = document.createElement('li');
+            li.textContent = pt;
+            ul.appendChild(li);
+        });
+    } else {
+        retWrapper.style.display = 'none';
+    }
+
+    // Scenario
+    const scWrapper = document.getElementById('analysisScenarioWrapper');
+    if (a.scenario_expression && a.scenario_expression.length > 0) {
+        scWrapper.style.display = 'block';
+        const ul = document.getElementById('analysisScenarioList');
+        ul.innerHTML = '';
+        a.scenario_expression.forEach(pt => {
+            const li = document.createElement('li');
+            li.textContent = pt;
+            ul.appendChild(li);
+        });
+    } else {
+        scWrapper.style.display = 'none';
+    }
+
+    // CTA
+    const ctaWrapper = document.getElementById('analysisCtaWrapper');
+    if (a.cta) {
+        ctaWrapper.style.display = 'block';
+        document.getElementById('analysisCtaText').textContent = a.cta;
+    } else {
+        ctaWrapper.style.display = 'none';
+    }
 }
 
 // ==================== Transcript Mode ====================
@@ -201,6 +354,12 @@ function setTranscript(mode) {
         btn.classList.toggle('active', btn.dataset.value === mode);
     });
     document.getElementById('modelGroup').style.display = mode === 'local' ? 'flex' : 'none';
+    document.getElementById('analyzeGroup').style.display = mode !== 'off' ? 'flex' : 'none';
+
+    // 如果关闭文案，自动关闭拆解
+    if (mode === 'off') {
+        document.getElementById('analyzeToggle').checked = false;
+    }
 }
 
 // ==================== UI Helpers ====================
@@ -342,6 +501,13 @@ async function saveSiliconFlowKey() {
         document.getElementById('siliconflowKeyInput').value = '';
         showToast('SiliconFlow API Key 已安全保存到服务器 ✅');
     } catch (e) { showToast('保存失败', 'error'); }
+}
+
+async function saveAiModel() {
+    // 仅仅保存在本地UI，发送请求时携带
+    const val = document.getElementById('aiModelInput').value.trim();
+    if (!val) { showToast('请输入有效的模型名称', 'error'); return; }
+    showToast(`AI 拆解模型已设置为: ${val} ✅`);
 }
 
 // ==================== History ====================
