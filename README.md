@@ -23,8 +23,10 @@
 - 🔗 **智能链接解析** — 支持抖音分享文本、短链接、完整链接，自动提取视频 ID
 - 📊 **完整视频数据** — 标题、作者、时长、播放量、点赞、评论、收藏、封面等
 - 🎙️ **视频语音转录** — 基于 [faster-whisper](https://github.com/SYSTRAN/faster-whisper) 将视频内语音转为文字
-- ☁️ **云端转录** — 可选 [Groq API](https://groq.com/) 云端快速转录
-- 🍪 **Cookie 自动管理** — 内置 Webhook 服务器 + Chrome 扩展，自动更新 Cookie
+- ☁️ **云端转录** — 可选 [Groq API](https://groq.com/) 或 SiliconFlow 云端快速转录
+- 🧠 **AI 爆款文案拆解** — 一键提炼黄金前三秒、文案框架、情绪留存点，支持 DeepSeek 等多模型
+- 🖥️ **高颜值 Web UI** — 赛博朋克深色主题，支持 SSE 服务端推送渐进式渲染与实时系统日志
+- 🍪 **Cookie 自动管理** — 内置 Webhook 服务器 + Chrome 扩展，自动无感更新 Cookie
 - 🔒 **完全本地化** — 零远程中间服务依赖，直接与抖音 API 通信
 - 📦 **命令行工具** — 简洁的 CLI 界面，支持 JSON 输出，易于集成到其他系统
 
@@ -54,6 +56,16 @@
 🎙️  视频内完整文案 (语音转录):
 ========================================
 你有没有发觉这个时代简直就是为了我们而生的...
+========================================
+
+🧠  AI 爆款文案拆解:
+========================================
+【Hook片段】: "你有没有发觉这个时代简直就是为了我们而生的"
+【Hook类型】: 情感共鸣类
+【内容框架】: 痛点/共鸣引入 -> 具体案例/场景展示 -> 价值观输出/行动号召
+【留存点】: 
+  - 提到“这个时代”，引发大环境的共鸣
+  - ...
 ========================================
 ```
 
@@ -98,11 +110,25 @@ sudo apt install ffmpeg
 
 ## 📖 使用指南
 
-### 基本用法
+### 🖥️ 启动网页版 (推荐)
+
+如果你更喜欢可视化操作，可以启动内置的高颜值 Web 界面：
 
 ```bash
-# 从分享文本解析（自动提取链接 + 转录语音文案）
-python main.py "2.30 复制打开抖音，看看【某某的作品】... https://v.douyin.com/xxxxx/"
+python -m web.app --port 8081
+```
+
+> 浏览器访问 `http://localhost:8081` 即可体验！
+> **Web 端特性**：暗黑科技风 UI、SSE 流式渐进渲染（解析、转录、拆解分步展示）、实时后端执行日志跟踪。
+
+### 📦 命令行基本用法
+
+```bash
+# 从分享文本解析并附加 AI 爆款拆解预存（自动提取链接 + 转录语音文案 + 深度拆解）
+python main.py --analyze "2.30 复制打开抖音，看看【某某的作品】... https://v.douyin.com/xxxxx/"
+
+# 仅转录不拆解
+python main.py "https://v.douyin.com/xxxxx/"
 
 # 仅获取视频信息（不转录，速度快）
 python main.py --no-transcript "https://v.douyin.com/xxxxx/"
@@ -150,9 +176,11 @@ python main.py [选项] [文本]
 
 选项:
   --no-transcript            不转录视频内语音（仅获取基本信息）
-  --cloud                    使用 Groq 云端 API 转录
+  --cloud                    使用云端 API (Groq 或 SiliconFlow) 转录
   --model {tiny,base,small,medium,large-v3}
                              本地转录模型大小 (默认: large-v3)
+  --analyze                  使用大模型对视频转录文案进行爆款深度拆解 (默认需要配置环境变量)
+  --ai-model MODEL_NAME      指定用于拆解的模型 (默认: Pro/deepseek-ai/DeepSeek-V3.2)
   --json                     以 JSON 格式输出
   --api-url URL              自定义 API 地址
   -v, --verbose              详细日志输出

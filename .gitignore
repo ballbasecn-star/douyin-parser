@@ -6,3 +6,4 @@ cache/
 .venv/
 venv/
 *.log
+deploy.sh
