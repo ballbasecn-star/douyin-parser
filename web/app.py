@@ -9,10 +9,9 @@ import logging
 import os
 import sys
 import threading
-from datetime import datetime
 import queue
 
-from flask import Flask, request, jsonify, render_template, send_from_directory, Response, stream_with_context
+from flask import Flask, request, jsonify, render_template, Response, stream_with_context
 
 # 将项目根目录加入 path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -25,6 +24,54 @@ app = Flask(__name__,
             static_folder="static")
 
 logger = logging.getLogger(__name__)
+DEFAULT_AI_MODEL = "Pro/deepseek-ai/DeepSeek-V3.2"
+
+
+def _parse_request_payload(data: dict) -> dict:
+    """标准化解析请求参数"""
+    if not data:
+        raise ValueError("请提供 JSON 数据")
+
+    url = data.get("url", "").strip()
+    if not url:
+        raise ValueError("请输入抖音链接")
+
+    use_cloud = bool(data.get("cloud", False))
+    cloud_provider = data.get("cloud_provider", "groq")
+
+    if use_cloud:
+        if cloud_provider == "siliconflow":
+            cloud_api_key = data.get("siliconflow_api_key") or os.environ.get("SILICONFLOW_API_KEY")
+        else:
+            cloud_api_key = data.get("groq_api_key") or os.environ.get("GROQ_API_KEY")
+    else:
+        cloud_api_key = None
+
+    return {
+        "url": url,
+        "enable_transcript": bool(data.get("transcript", False)),
+        "enable_analysis": bool(data.get("analyze", False)),
+        "use_cloud": use_cloud,
+        "cloud_provider": cloud_provider,
+        "model_size": data.get("model", "small"),
+        "ai_model": data.get("ai_model", DEFAULT_AI_MODEL),
+        "cloud_api_key": cloud_api_key,
+    }
+
+
+def _run_parse(parse_request: dict, progress_callback=None):
+    """执行解析主流程"""
+    return parse(
+        share_text=parse_request["url"],
+        enable_transcript=parse_request["enable_transcript"],
+        use_cloud=parse_request["use_cloud"],
+        cloud_provider=parse_request["cloud_provider"],
+        model_size=parse_request["model_size"],
+        cloud_api_key=parse_request["cloud_api_key"],
+        enable_analysis=parse_request["enable_analysis"],
+        ai_model=parse_request["ai_model"],
+        progress_callback=progress_callback,
+    )
 
 # ==================== 页面路由 ====================
 
@@ -51,30 +98,10 @@ def health():
 @app.route("/api/parse", methods=["POST"])
 def api_parse():
     """解析抖音视频"""
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "请提供 JSON 数据"}), 400
-
-    url = data.get("url", "").strip()
-    if not url:
-        return jsonify({"error": "请输入抖音链接"}), 400
-
-    # 解析选项
-    enable_transcript = data.get("transcript", False)
-    enable_analysis = data.get("analyze", False)
-    use_cloud = data.get("cloud", False)
-    cloud_provider = data.get("cloud_provider", "groq")
-    model_size = data.get("model", "small")
-    ai_model = data.get("ai_model", "Pro/deepseek-ai/DeepSeek-V3.2")
-
-    # 确定 API Key
-    if use_cloud:
-        if cloud_provider == "siliconflow":
-            cloud_api_key = data.get("siliconflow_api_key") or os.environ.get("SILICONFLOW_API_KEY")
-        else:
-            cloud_api_key = data.get("groq_api_key") or os.environ.get("GROQ_API_KEY")
-    else:
-        cloud_api_key = None
+    try:
+        parse_request = _parse_request_payload(request.get_json(silent=True))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
     def generate():
         q = queue.Queue()
@@ -84,17 +111,7 @@ def api_parse():
 
         def worker():
             try:
-                result = parse(
-                    share_text=url,
-                    enable_transcript=enable_transcript,
-                    use_cloud=use_cloud,
-                    cloud_provider=cloud_provider,
-                    model_size=model_size,
-                    cloud_api_key=cloud_api_key,
-                    enable_analysis=enable_analysis,
-                    ai_model=ai_model,
-                    progress_callback=progress_callback
-                )
+                result = _run_parse(parse_request, progress_callback=progress_callback)
                 if result:
                     q.put({"type": "finish", "success": True})
                 else:
@@ -116,6 +133,50 @@ def api_parse():
             yield f"data: {json.dumps(item, ensure_ascii=False)}\n\n"
 
     return Response(stream_with_context(generate()), mimetype="text/event-stream")
+
+
+@app.route("/api/parse-sync", methods=["POST"])
+def api_parse_sync():
+    """同步解析抖音视频，直接返回结构化 JSON"""
+    try:
+        parse_request = _parse_request_payload(request.get_json(silent=True))
+    except ValueError as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "error": {
+                "code": "BAD_REQUEST",
+                "message": str(e),
+            }
+        }), 400
+
+    try:
+        result = _run_parse(parse_request)
+        if not result:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "error": {
+                    "code": "PARSE_FAILED",
+                    "message": "解析失败，请检查链接是否有效或 Cookie 是否可用",
+                }
+            }), 422
+
+        return jsonify({
+            "success": True,
+            "data": result.to_dict(),
+            "error": None,
+        })
+    except Exception as e:
+        logger.error(f"API 同步解析错误: {e}", exc_info=True)
+        return jsonify({
+            "success": False,
+            "data": None,
+            "error": {
+                "code": "INTERNAL_ERROR",
+                "message": str(e),
+            }
+        }), 500
 
 
 @app.route("/api/cookie/status")
