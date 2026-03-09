@@ -1,0 +1,13 @@
+.git
+.gitignore
+.idea
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+cache
+server_test.log
+douyin-parser.tar.gz
+chrome-cookie-sniffer

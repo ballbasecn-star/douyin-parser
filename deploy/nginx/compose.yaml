@@ -1,0 +1,21 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: shared-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./www:/var/www/html:ro
+    networks:
+      - shared-proxy
+      - linker
+
+networks:
+  shared-proxy:
+    external: true
+  linker:
+    external: true
