@@ -29,7 +29,7 @@ RUN python -m pip install --upgrade pip \
     && pip install -r requirements.txt
 
 COPY main.py .
-COPY douyin ./douyin
+COPY app ./app
 COPY web ./web
 COPY scripts ./scripts
 COPY cookie_data ./cookie_data
