@@ -41,6 +41,8 @@
   负责对转录文本做 AI 分析
 - `app/services/video_parse_service.py`
   负责协调整条单视频处理流程
+- `app/repositories/`
+  负责博主、视频和分析结果的持久化读写
 - `app/infra/cookie_store.py`
   负责 Cookie 存储、读取与全局管理器
 - `app/infra/cookie_webhook.py`

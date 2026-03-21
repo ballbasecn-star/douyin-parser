@@ -9,7 +9,7 @@ import random
 import re
 import string
 from typing import Dict, Optional
-from urllib.parse import quote, urlencode
+from urllib.parse import parse_qs, quote, urlencode, urlparse
 
 import requests
 
@@ -18,6 +18,7 @@ from app.infra.douyin_signature import ABogus
 logger = logging.getLogger(__name__)
 
 POST_DETAIL_API = "https://www.douyin.com/aweme/v1/web/aweme/detail/"
+POST_LIST_API = "https://www.douyin.com/aweme/v1/web/aweme/post/"
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -64,6 +65,8 @@ MOBILE_HEADERS = {
     "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
 }
 
+CREATOR_URL_PATTERN = re.compile(r"/user/([^/?#]+)")
+
 
 def extract_aweme_id(url: str) -> Optional[str]:
     """从 URL 中提取 aweme_id。"""
@@ -109,6 +112,42 @@ def resolve_short_url(short_url: str) -> Optional[str]:
     return None
 
 
+def resolve_redirect_url(url: str) -> Optional[str]:
+    """跟随重定向并返回最终 URL。"""
+    try:
+        response = requests.get(
+            url,
+            headers=MOBILE_HEADERS,
+            allow_redirects=True,
+            timeout=10,
+        )
+        if response.status_code == 200:
+            final_url = response.url
+            logger.debug("重定向 → %s", final_url)
+            if final_url.rstrip("/") in ("https://www.douyin.com", "https://m.douyin.com"):
+                logger.warning("链接被重定向到首页，可能已失效")
+                return None
+            return final_url
+    except Exception as exc:
+        logger.error("解析重定向失败: %s", exc)
+    return None
+
+
+def extract_stable_user_id(url: str) -> Optional[str]:
+    """从主页链接中提取稳定用户标识。"""
+    parsed = urlparse(url)
+    match = CREATOR_URL_PATTERN.search(parsed.path)
+    if match:
+        return match.group(1)
+
+    query = parse_qs(parsed.query)
+    for key in ("sec_user_id", "sec_uid"):
+        values = query.get(key)
+        if values:
+            return values[0]
+    return None
+
+
 def gen_mstoken() -> str:
     """生成随机 msToken。"""
     chars = string.ascii_letters + string.digits + "_-"
@@ -123,11 +162,38 @@ def build_post_detail_params(aweme_id: str) -> dict:
     return params
 
 
-def sign_params(params: dict) -> str:
+def build_post_list_params(stable_user_id: str, max_cursor: int = 0, count: int = 20) -> dict:
+    """构造博主视频列表 API 请求参数。"""
+    params = dict(BASE_PARAMS)
+    params.update(
+        {
+            "sec_user_id": stable_user_id,
+            "max_cursor": str(max_cursor),
+            "count": str(count),
+            "locate_query": "false",
+            "publish_video_strategy_type": "2",
+            "show_live_replay_strategy": "1",
+            "need_time_list": "1",
+            "time_list_query": "0",
+            "whale_cut_token": "",
+            "cut_version": "1",
+            "from_user_page": "1",
+            "msToken": "",
+        }
+    )
+    return params
+
+
+def sign_api_url(api_url: str, params: dict) -> str:
     """使用 a_bogus 签名参数，返回完整 URL。"""
     bogus = ABogus()
     a_bogus = bogus.get_value(params, method="GET")
-    return f"{POST_DETAIL_API}?{urlencode(params)}&a_bogus={quote(a_bogus, safe='')}"
+    return f"{api_url}?{urlencode(params)}&a_bogus={quote(a_bogus, safe='')}"
+
+
+def sign_params(params: dict) -> str:
+    """兼容旧调用方式，签名作品详情 API。"""
+    return sign_api_url(POST_DETAIL_API, params)
 
 
 def fetch_video_detail(aweme_id: str, cookie: str | None = None) -> Optional[Dict]:
@@ -165,5 +231,42 @@ def fetch_video_detail(aweme_id: str, cookie: str | None = None) -> Optional[Dic
 
     except Exception as exc:
         logger.error("请求抖音 API 失败: %s", exc)
+
+    return None
+
+
+def fetch_creator_posts(
+    stable_user_id: str,
+    cookie: str | None = None,
+    max_cursor: int = 0,
+    count: int = 20,
+    referer_url: str | None = None,
+) -> Optional[Dict]:
+    """请求抖音 API 获取博主视频列表。"""
+    params = build_post_list_params(stable_user_id=stable_user_id, max_cursor=max_cursor, count=count)
+    signed_url = sign_api_url(POST_LIST_API, params)
+
+    headers = dict(DEFAULT_HEADERS)
+    headers["Referer"] = referer_url or f"https://www.douyin.com/user/{stable_user_id}"
+    if cookie:
+        headers["Cookie"] = cookie
+
+    logger.info("请求博主视频列表: stable_user_id=%s max_cursor=%s count=%s", stable_user_id, max_cursor, count)
+
+    try:
+        response = requests.get(signed_url, headers=headers, timeout=30)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("status_code") == 0:
+                return data
+            logger.warning(
+                "博主列表 API 状态码异常: %s, %s",
+                data.get("status_code"),
+                data.get("status_msg", ""),
+            )
+        else:
+            logger.warning("博主列表 HTTP 错误: %s", response.status_code)
+    except Exception as exc:
+        logger.error("请求博主列表失败: %s", exc)
 
     return None

@@ -14,3 +14,10 @@ TEMPLATE_DIR = WEB_DIR / "templates"
 STATIC_DIR = WEB_DIR / "static"
 COOKIE_DIR = Path(os.environ.get("COOKIE_DIR", str(BASE_DIR / "cookie_data")))
 COOKIE_FILE = COOKIE_DIR / "douyin_cookie.json"
+DATA_DIR = BASE_DIR / "data"
+
+
+def get_database_url() -> str:
+    """返回当前数据库连接串。"""
+    default_path = DATA_DIR / "app_dev.sqlite3"
+    return os.environ.get("DATABASE_URL", f"sqlite:///{default_path}")

@@ -7,7 +7,15 @@ import threading
 
 from flask import Blueprint, Response, jsonify, render_template, request, stream_with_context
 
+from app.schemas.creator_monitor import (
+    parse_creator_create_request,
+    parse_creator_sync_request,
+    parse_creator_update_request,
+    parse_stored_video_analyze_request,
+)
 from app.schemas.video_parse import parse_video_request
+from app.services.creator_service import create_creator, get_creator_detail, list_creators, update_creator
+from app.services.creator_sync_service import list_creator_videos, sync_creator_videos
 from app.services.image_proxy_service import fetch_proxy_image
 from app.services.system_service import (
     get_cookie_status_payload,
@@ -15,10 +23,28 @@ from app.services.system_service import (
     save_cookie_value,
     save_runtime_keys,
 )
+from app.services.video_analysis_service import analyze_stored_video, get_video_analysis
 from app.services.video_parse_service import run_video_parse
 
 api_blueprint = Blueprint("api", __name__)
 logger = logging.getLogger(__name__)
+
+
+def success_response(data, status_code: int = 200):
+    return jsonify({"success": True, "data": data, "error": None}), status_code
+
+
+def error_response(code: str, message: str, status_code: int):
+    return (
+        jsonify(
+            {
+                "success": False,
+                "data": None,
+                "error": {"code": code, "message": message},
+            }
+        ),
+        status_code,
+    )
 
 
 @api_blueprint.route("/")
@@ -81,59 +107,17 @@ def api_parse_sync():
     try:
         parse_request = parse_video_request(request.get_json(silent=True))
     except ValueError as exc:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "data": None,
-                    "error": {
-                        "code": "BAD_REQUEST",
-                        "message": str(exc),
-                    },
-                }
-            ),
-            400,
-        )
+        return error_response("BAD_REQUEST", str(exc), 400)
 
     try:
         result = run_video_parse(parse_request)
         if not result:
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "data": None,
-                        "error": {
-                            "code": "PARSE_FAILED",
-                            "message": "解析失败，请检查链接是否有效或 Cookie 是否可用",
-                        },
-                    }
-                ),
-                422,
-            )
+            return error_response("PARSE_FAILED", "解析失败，请检查链接是否有效或 Cookie 是否可用", 422)
 
-        return jsonify(
-            {
-                "success": True,
-                "data": result.to_dict(),
-                "error": None,
-            }
-        )
+        return success_response(result.to_dict())
     except Exception as exc:  # pragma: no cover - 兜底日志分支
         logger.error("API 同步解析错误: %s", exc, exc_info=True)
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "data": None,
-                    "error": {
-                        "code": "INTERNAL_ERROR",
-                        "message": str(exc),
-                    },
-                }
-            ),
-            500,
-        )
+        return error_response("INTERNAL_ERROR", str(exc), 500)
 
 
 @api_blueprint.route("/api/cookie/status")
@@ -181,3 +165,93 @@ def config_set():
         return jsonify({"error": "未提供有效的 Key"}), 400
 
     return jsonify({"success": True, "message": f"已保存: {', '.join(saved)}"})
+
+
+@api_blueprint.route("/api/creators", methods=["GET"])
+def creators_list():
+    """获取博主列表。"""
+    return success_response(list_creators())
+
+
+@api_blueprint.route("/api/creators", methods=["POST"])
+def creators_create():
+    """添加博主。"""
+    try:
+        create_request = parse_creator_create_request(request.get_json(silent=True))
+        return success_response(create_creator(create_request), 201)
+    except ValueError as exc:
+        return error_response("BAD_REQUEST", str(exc), 400)
+    except Exception as exc:  # pragma: no cover - 兜底日志分支
+        logger.error("创建博主失败: %s", exc, exc_info=True)
+        return error_response("INTERNAL_ERROR", str(exc), 500)
+
+
+@api_blueprint.route("/api/creators/<int:creator_id>", methods=["GET"])
+def creators_detail(creator_id: int):
+    """获取单个博主详情。"""
+    try:
+        return success_response(get_creator_detail(creator_id))
+    except ValueError as exc:
+        return error_response("NOT_FOUND", str(exc), 404)
+
+
+@api_blueprint.route("/api/creators/<int:creator_id>", methods=["PATCH"])
+def creators_update(creator_id: int):
+    """更新博主。"""
+    try:
+        update_request = parse_creator_update_request(request.get_json(silent=True))
+        return success_response(update_creator(creator_id, update_request))
+    except ValueError as exc:
+        status = 404 if "不存在" in str(exc) else 400
+        code = "NOT_FOUND" if status == 404 else "BAD_REQUEST"
+        return error_response(code, str(exc), status)
+
+
+@api_blueprint.route("/api/creators/<int:creator_id>/sync", methods=["POST"])
+def creators_sync(creator_id: int):
+    """同步博主视频列表。"""
+    try:
+        sync_request = parse_creator_sync_request(request.get_json(silent=True))
+        return success_response(sync_creator_videos(creator_id, sync_request))
+    except ValueError as exc:
+        status = 404 if "不存在" in str(exc) else 400
+        code = "NOT_FOUND" if status == 404 else "BAD_REQUEST"
+        return error_response(code, str(exc), status)
+    except Exception as exc:  # pragma: no cover - 兜底日志分支
+        logger.error("同步博主视频失败: %s", exc, exc_info=True)
+        return error_response("INTERNAL_ERROR", str(exc), 500)
+
+
+@api_blueprint.route("/api/creators/<int:creator_id>/videos", methods=["GET"])
+def creators_videos(creator_id: int):
+    """获取博主视频列表。"""
+    try:
+        return success_response(list_creator_videos(creator_id))
+    except ValueError as exc:
+        return error_response("NOT_FOUND", str(exc), 404)
+
+
+@api_blueprint.route("/api/videos/<int:video_id>/analyze", methods=["POST"])
+def videos_analyze(video_id: int):
+    """对已保存视频执行转录与分析。"""
+    try:
+        analyze_request = parse_stored_video_analyze_request(request.get_json(silent=True))
+        return success_response(analyze_stored_video(video_id, analyze_request))
+    except ValueError as exc:
+        status = 404 if "不存在" in str(exc) else 400
+        code = "NOT_FOUND" if status == 404 else "BAD_REQUEST"
+        return error_response(code, str(exc), status)
+    except Exception as exc:  # pragma: no cover - 兜底日志分支
+        logger.error("分析存量视频失败: %s", exc, exc_info=True)
+        return error_response("INTERNAL_ERROR", str(exc), 500)
+
+
+@api_blueprint.route("/api/videos/<int:video_id>/analysis", methods=["GET"])
+def videos_analysis(video_id: int):
+    """获取已保存视频分析结果。"""
+    try:
+        return success_response(get_video_analysis(video_id))
+    except ValueError as exc:
+        status = 404 if "不存在" in str(exc) or "尚未生成" in str(exc) else 400
+        code = "NOT_FOUND" if status == 404 else "BAD_REQUEST"
+        return error_response(code, str(exc), status)

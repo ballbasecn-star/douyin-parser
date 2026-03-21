@@ -2,10 +2,12 @@
 
 from flask import Flask
 
+from app.infra.db import init_database
 from app.infra.settings import STATIC_DIR, TEMPLATE_DIR
 
 
 def create_app() -> Flask:
+    init_database()
     app = Flask(
         __name__,
         template_folder=str(TEMPLATE_DIR),
