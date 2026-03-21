@@ -891,6 +891,24 @@ async function addCreator() {
         document.getElementById('creatorDomainInput').value = '';
         document.getElementById('creatorRemarkInput').value = '';
 
+        if (data.creator) {
+            const syncVideos = Array.isArray(data.sync?.videos) ? data.sync.videos : [];
+            const creatorPayload = {
+                ...data.creator,
+                video_count: typeof data.creator.video_count === 'number'
+                    ? data.creator.video_count
+                    : syncVideos.length,
+            };
+
+            const creatorExists = creators.some((creator) => creator.id === creatorPayload.id);
+            if (creatorExists) {
+                creators = creators.map((creator) => creator.id === creatorPayload.id ? creatorPayload : creator);
+            } else {
+                creators = [creatorPayload, ...creators];
+            }
+            setActiveCreator(creatorPayload, syncVideos);
+        }
+
         await loadCreators(data.creator.id);
         showToast(data.created ? '博主已添加并完成首次同步 ✅' : '博主已更新并完成同步 ✅');
     } catch (error) {
