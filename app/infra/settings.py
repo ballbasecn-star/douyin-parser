@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 
-from douyin import __version__
+from app.version import __version__
 
 APP_VERSION = __version__
 DEFAULT_AI_MODEL = "Pro/deepseek-ai/DeepSeek-V3.2"

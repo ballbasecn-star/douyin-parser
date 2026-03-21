@@ -230,16 +230,18 @@ app/
 
 迁移完成后，`douyin/` 下原有文件优先保留为兼容导出层，对外维持旧路径；新的业务实现统一继续收口到 `app/`。
 
-### 当前已完成的第一步重构
+### 当前已完成的结构化收敛
 
 当前仓库已经完成了第一轮结构化收敛：
 
 - `app/api/` 已承接 Web/API 路由
+- `app/cli/` 已承接 CLI 主入口与子命令实现
 - `app/services/` 已承接视频抓取、转录、分析、主解析编排与系统服务
 - `app/domain/` 已承接单视频核心领域模型 `VideoInfo`
 - `app/schemas/` 已承接解析请求结构
 - `app/infra/` 已承接应用基础配置、Cookie 基础设施、抖音签名、Web 请求客户端与媒体处理基础设施
 - `web/app.py` 现在只负责启动 Flask 服务和 Cookie Webhook
+- `main.py` 现在只负责转发到 `app/cli/main.py`
 
 这意味着后续新增能力应继续落在 `app/` 下，而不是再回到 `web/app.py` 堆逻辑。
 

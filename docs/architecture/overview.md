@@ -6,7 +6,8 @@
 
 ## 当前运行入口
 
-- CLI 入口：`main.py`
+- CLI 入口：`app/cli/main.py`
+- CLI 兼容包装层：`main.py`
 - Web UI 与 API：`web/app.py`
 - App 分层实现：`app/`
 - Agent 客户端：`scripts/douyin_parser_client.py`
@@ -56,6 +57,8 @@
   负责 Cookie Webhook 接收服务
 - `app/api/`
   负责 Flask 路由、请求适配与响应组装
+- `app/cli/`
+  负责 CLI 命令入口、解析命令与 Cookie 子命令
 - `app/services/`
   负责视频抓取、转录、分析、主解析编排、系统配置和图片代理等业务服务
 - `app/domain/`
@@ -66,6 +69,8 @@
   负责应用级配置、路径与基础设施常量，并承接 Cookie、签名和抖音 Web 客户端
 - `web/app.py`
   作为 Web 服务启动入口，负责装配 app 并启动运行
+- `main.py`
+  作为 CLI 兼容包装层，转发到 `app/cli/main.py`
 
 ## 当前部署形态
 

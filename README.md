@@ -197,7 +197,7 @@ Cookie 管理:
 
 ```
 douyin-parser/
-├── main.py                          # CLI 命令行入口
+├── main.py                          # CLI 兼容入口（实际实现已迁移到 app/cli）
 ├── douyin/                          # 核心模块
 │   ├── __init__.py                  # 包初始化，版本号
 │   ├── crawler.py                   # 兼容导出层（抓取逻辑已迁移到 app/services + app/infra）
@@ -209,6 +209,7 @@ douyin-parser/
 │   └── cookie_manager.py            # 兼容导出层（Cookie 基础设施已迁移到 app/infra）
 ├── app/                             # 新后端主包
 │   ├── api/                         # Web/API 路由与请求适配
+│   ├── cli/                         # CLI 命令入口与子命令实现
 │   ├── services/                    # 业务流程编排（含抓取、转录、分析与主解析）
 │   ├── domain/                      # 领域模型（含 VideoInfo）
 │   ├── schemas/                     # 请求结构定义

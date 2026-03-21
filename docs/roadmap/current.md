@@ -30,10 +30,11 @@
 2. Cookie 存储与 Webhook 已迁移到 `app/infra/`
 3. 抖音请求客户端与签名基础设施已迁移到 `app/infra/`，抓取服务已迁移到 `app/services/`
 4. 转录、分析和主解析流程已迁移到 `app/services/`
+5. CLI 入口已迁移到 `app/cli/`
 
 当前仍待完成：
 
-1. CLI 入口迁移与旧目录清理
+1. 旧目录清理与兼容层收口
 
 ## 博主监控 V1
 
