@@ -132,14 +132,14 @@
                     <div class="option-group">
                         <label class="option-label">转录</label>
                         <div class="toggle-group" id="transcriptToggle">
-                            <button class="toggle-btn active" data-value="off"
-                                onclick="setTranscript('off')">关闭</button>
-                            <button class="toggle-btn" data-value="local" onclick="setTranscript('local')">本地
-                                Whisper</button>
+                            <button class="toggle-btn active" data-value="siliconflow"
+                                onclick="setTranscript('siliconflow')">SiliconFlow</button>
                             <button class="toggle-btn" data-value="groq" onclick="setTranscript('groq')">Groq
                                 云端</button>
-                            <button class="toggle-btn" data-value="siliconflow"
-                                onclick="setTranscript('siliconflow')">SiliconFlow</button>
+                            <button class="toggle-btn" data-value="local" onclick="setTranscript('local')">本地
+                                Whisper</button>
+                            <button class="toggle-btn" data-value="off"
+                                onclick="setTranscript('off')">关闭</button>
                         </div>
                     </div>
                     <div class="option-group" id="modelGroup" style="display:none">
@@ -152,7 +152,7 @@
                             <option value="large-v3">large-v3 (3GB)</option>
                         </select>
                     </div>
-                    <div class="option-group" id="analyzeGroup" style="display:none">
+                    <div class="option-group" id="analyzeGroup" style="display:flex">
                         <label class="option-label option-label-accent">AI 爆款拆解</label>
                         <label class="switch">
                             <input type="checkbox" id="analyzeToggle">

@@ -4,7 +4,7 @@
 
 // ==================== State ====================
 let currentData = null;
-let transcriptMode = 'off'; // off | local | groq | siliconflow
+let transcriptMode = 'siliconflow'; // off | local | groq | siliconflow
 let creators = [];
 let activeCreator = null;
 let creatorVideos = [];
@@ -49,6 +49,7 @@ function appendLog(msg, type = 'info') {
 
 // ==================== Init ====================
 document.addEventListener('DOMContentLoaded', () => {
+    setTranscript(transcriptMode);
     checkCookieStatus();
     loadHistory();
     loadCreators();
