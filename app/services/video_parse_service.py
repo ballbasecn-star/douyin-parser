@@ -1,7 +1,5 @@
 """视频解析业务服务。"""
 
-from typing import Optional
-
 from douyin.parser import parse
 
 from app.schemas.video_parse import ParseRequest
@@ -20,8 +18,3 @@ def run_video_parse(parse_request: ParseRequest, progress_callback=None):
         ai_model=parse_request.ai_model,
         progress_callback=progress_callback,
     )
-
-
-def parse_sync_result(parse_request: ParseRequest) -> Optional[object]:
-    """同步解析封装，便于后续扩展。"""
-    return run_video_parse(parse_request)
