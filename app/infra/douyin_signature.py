@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Original Author:
 This file is from https://github.com/JoeanAmier/TikTokDownloader

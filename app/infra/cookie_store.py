@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Cookie 存储与管理
 """

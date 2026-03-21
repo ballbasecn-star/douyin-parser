@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 抖音 Web 请求基础设施
 """
