@@ -59,15 +59,15 @@
     <!-- 主内容 -->
     <main class="main">
         <!-- Hero 区域 -->
-        <section class="hero">
+        <section class="hero narrow-section">
             <h1 class="hero-title">
                 <span class="hero-gradient">智能解析</span>抖音视频
             </h1>
-            <p class="hero-subtitle">粘贴分享链接，一键获取视频信息与完整文案</p>
+            <p class="hero-subtitle">粘贴视频链接做单条深度解析，或直接建立你的对标博主内容库</p>
         </section>
 
         <!-- 输入区域 -->
-        <section class="input-section">
+        <section class="input-section narrow-section">
             <div class="input-card">
                 <div class="input-wrapper">
                     <input type="text" id="urlInput" class="url-input" placeholder="粘贴抖音分享文本或链接..." autocomplete="off"
@@ -121,8 +121,105 @@
             </div>
         </section>
 
+        <!-- 博主监控工作台 -->
+        <section class="creator-section">
+            <div class="section-heading">
+                <div>
+                    <span class="section-kicker">Creator Monitor</span>
+                    <h2 class="workspace-title">博主监控工作台</h2>
+                    <p class="workspace-subtitle">维护你的对标博主列表，同步视频库，并挑选值得深挖的内容做转录和 AI 分析。</p>
+                </div>
+                <span class="workspace-badge">V1 Beta</span>
+            </div>
+
+            <div class="creator-add-card">
+                <div class="creator-add-grid">
+                    <input type="text" id="creatorUrlInput" class="workspace-input" placeholder="粘贴博主主页分享短链或主页链接...">
+                    <input type="text" id="creatorDomainInput" class="workspace-input" placeholder="领域标签，如 AI 变现">
+                    <input type="text" id="creatorRemarkInput" class="workspace-input" placeholder="备注，可选">
+                    <button class="parse-btn creator-add-btn" id="creatorAddBtn" onclick="addCreator()">
+                        <span class="parse-btn-text">添加并同步</span>
+                        <span class="parse-btn-loader" style="display:none">
+                            <svg class="spinner" width="20" height="20" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none"
+                                    stroke-dasharray="60 200" stroke-linecap="round" />
+                            </svg>
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="creator-workspace">
+                <aside class="panel-card creator-panel">
+                    <div class="panel-header panel-header-between">
+                        <div>
+                            <h3 class="panel-title">已关注博主</h3>
+                            <p class="panel-subtitle">你的对标账号库会长期保存在这里。</p>
+                        </div>
+                        <span class="count-badge" id="creatorCountBadge">0</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="empty-state" id="creatorEmptyState">还没有添加博主。先粘贴一个主页链接开始积累素材库。</div>
+                        <div class="creator-list" id="creatorList"></div>
+                    </div>
+                </aside>
+
+                <section class="panel-card video-panel">
+                    <div class="panel-header panel-header-between">
+                        <div>
+                            <div class="panel-title-row">
+                                <h3 class="panel-title" id="activeCreatorName">选择一个博主</h3>
+                                <span class="status-pill muted" id="activeCreatorStatus">未选择</span>
+                            </div>
+                            <p class="panel-subtitle" id="activeCreatorMeta">添加博主后，这里会展示已同步的视频列表与分析入口。</p>
+                        </div>
+                        <div class="panel-actions">
+                            <button class="action-btn" id="syncCreatorBtn" onclick="syncActiveCreator()" disabled>
+                                同步最新视频
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="creator-summary" id="creatorSummary" style="display:none">
+                        <div class="summary-chip">
+                            <span class="summary-label">领域</span>
+                            <span class="summary-value" id="activeCreatorDomain">-</span>
+                        </div>
+                        <div class="summary-chip">
+                            <span class="summary-label">备注</span>
+                            <span class="summary-value" id="activeCreatorRemark">-</span>
+                        </div>
+                        <div class="summary-chip">
+                            <span class="summary-label">最近同步</span>
+                            <span class="summary-value" id="activeCreatorSyncTime">-</span>
+                        </div>
+                        <div class="summary-chip">
+                            <span class="summary-label">作品数</span>
+                            <span class="summary-value" id="activeCreatorVideoCount">0</span>
+                        </div>
+                    </div>
+
+                    <div class="video-toolbar" id="videoToolbar" style="display:none">
+                        <div class="video-toolbar-group">
+                            <label class="option-label" for="videoSortSelect">排序</label>
+                            <select class="model-select" id="videoSortSelect" onchange="renderCreatorVideos()">
+                                <option value="publish_desc">最近发布</option>
+                                <option value="like_desc">点赞最高</option>
+                                <option value="comment_desc">评论最高</option>
+                                <option value="collect_desc">收藏最高</option>
+                            </select>
+                        </div>
+                        <div class="video-toolbar-tip" id="videoToolbarTip">同步后可直接选择视频做深度分析。</div>
+                    </div>
+
+                    <div class="empty-state empty-state-lg" id="videoEmptyState">选择左侧博主后，这里会显示该账号的视频库。</div>
+                    <div class="video-list" id="creatorVideoList"></div>
+                </section>
+            </div>
+        </section>
+
         <!-- 状态提示与日志输出 (Terminal) -->
-        <div class="terminal-container" id="terminalContainer" style="display:none">
+        <div class="terminal-container narrow-section" id="terminalContainer" style="display:none">
             <div class="terminal-header">
                 <div class="terminal-dots">
                     <span class="dot red"></span>
@@ -140,7 +237,7 @@
         </div>
 
         <!-- 结果区域 -->
-        <section class="result-section" id="resultSection" style="display:none">
+        <section class="result-section narrow-section" id="resultSection" style="display:none">
             <div class="result-card">
                 <!-- 头部：封面 + 基本信息 -->
                 <div class="result-header">
@@ -339,13 +436,13 @@
         </section>
 
         <!-- 错误提示 -->
-        <div class="error-card" id="errorCard" style="display:none">
+        <div class="error-card narrow-section" id="errorCard" style="display:none">
             <div class="error-icon">⚠️</div>
             <p class="error-text" id="errorText"></p>
         </div>
 
         <!-- 历史记录 -->
-        <section class="history-section" id="historySection" style="display:none">
+        <section class="history-section narrow-section" id="historySection" style="display:none">
             <h3 class="section-title">最近解析</h3>
             <div class="history-list" id="historyList"></div>
         </section>
