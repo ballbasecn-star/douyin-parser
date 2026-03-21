@@ -6,6 +6,7 @@ import os
 from dataclasses import dataclass
 from typing import Mapping, Optional
 
+from app.infra.douyin_link_utils import normalize_creator_source_url
 from app.infra.settings import DEFAULT_AI_MODEL
 
 
@@ -46,7 +47,7 @@ def parse_creator_create_request(data: Optional[dict]) -> CreatorCreateRequest:
     if not data:
         raise ValueError("请提供 JSON 数据")
 
-    source_url = (data.get("source_url") or data.get("url") or "").strip()
+    source_url = normalize_creator_source_url((data.get("source_url") or data.get("url") or "").strip())
     if not source_url:
         raise ValueError("请输入博主主页链接")
 

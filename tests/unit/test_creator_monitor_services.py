@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import patch
 
 from app.infra.db import init_database, reset_database_state, session_scope
+from app.infra.douyin_link_utils import normalize_creator_source_url
 from app.repositories.models import Creator, CreatorVideo
 from app.schemas.creator_monitor import CreatorCreateRequest, CreatorSyncRequest, StoredVideoAnalyzeRequest
 from app.services.creator_service import create_creator
@@ -29,6 +30,13 @@ class CreatorMonitorServiceTests(unittest.TestCase):
         if os.path.exists(self.db_file.name):
             os.unlink(self.db_file.name)
 
+    def test_normalize_creator_source_url_extracts_link_from_share_text(self):
+        text = "长按复制此条消息，打开抖音搜索，查看TA的更多作品。 https://v.douyin.com/LCZ7RTb0yJY/"
+        self.assertEqual(
+            normalize_creator_source_url(text),
+            "https://v.douyin.com/LCZ7RTb0yJY/",
+        )
+
     @patch("app.services.creator_service.sync_creator_videos")
     @patch("app.services.creator_service.resolve_redirect_url")
     def test_create_creator_persists_stable_user_id(self, mock_resolve_redirect_url, mock_sync_creator_videos):
@@ -48,6 +56,25 @@ class CreatorMonitorServiceTests(unittest.TestCase):
         self.assertEqual(result["creator"]["stable_user_id"], "MS4wLjABAAAA-test")
         self.assertEqual(result["creator"]["domain_tag"], "AI")
         self.assertEqual(result["sync"]["synced_count"], 0)
+
+    @patch("app.services.creator_service.sync_creator_videos")
+    @patch("app.services.creator_service.resolve_redirect_url")
+    def test_create_creator_accepts_share_text_input(self, mock_resolve_redirect_url, mock_sync_creator_videos):
+        mock_resolve_redirect_url.return_value = "https://www.douyin.com/user/MS4wLjABAAAA-share-text"
+        mock_sync_creator_videos.return_value = {"synced_count": 0, "videos": [], "has_more": False, "next_cursor": 0}
+
+        result = create_creator(
+            CreatorCreateRequest(
+                source_url="长按复制此条消息，打开抖音搜索，查看TA的更多作品。 https://v.douyin.com/LCZ7RTb0yJY/",
+                domain_tag="AI",
+                remark="分享文案输入",
+                status="active",
+                initial_sync=False,
+            )
+        )
+
+        self.assertEqual(result["creator"]["source_url"], "https://v.douyin.com/LCZ7RTb0yJY/")
+        self.assertEqual(result["creator"]["stable_user_id"], "MS4wLjABAAAA-share-text")
 
     @patch("app.services.creator_sync_service.fetch_creator_posts")
     def test_sync_creator_videos_upserts_video_rows(self, mock_fetch_creator_posts):

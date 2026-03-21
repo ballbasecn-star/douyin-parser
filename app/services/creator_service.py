@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from app.infra.db import session_scope
+from app.infra.douyin_link_utils import normalize_creator_source_url
 from app.infra.douyin_web_client import extract_stable_user_id, resolve_redirect_url
 from app.repositories.creator_repository import CreatorRepository
 from app.repositories.models import Creator
@@ -12,7 +13,11 @@ from app.services.creator_sync_service import sync_creator_videos
 
 def resolve_creator_identity(source_url: str) -> tuple[str, str]:
     """解析主页分享链接，返回稳定博主标识与最终链接。"""
-    resolved_url = resolve_redirect_url(source_url) or source_url
+    normalized_url = normalize_creator_source_url(source_url)
+    if not normalized_url:
+        raise ValueError("请输入有效的博主主页链接")
+
+    resolved_url = resolve_redirect_url(normalized_url) or normalized_url
     stable_user_id = extract_stable_user_id(resolved_url)
     if not stable_user_id:
         raise ValueError("无法从主页链接中解析稳定博主标识，请确认链接是否有效")
@@ -21,14 +26,15 @@ def resolve_creator_identity(source_url: str) -> tuple[str, str]:
 
 def create_creator(request: CreatorCreateRequest) -> dict:
     """创建或更新博主。"""
-    stable_user_id, resolved_url = resolve_creator_identity(request.source_url)
+    normalized_source_url = normalize_creator_source_url(request.source_url)
+    stable_user_id, resolved_url = resolve_creator_identity(normalized_source_url)
 
     with session_scope() as session:
         creator = CreatorRepository.get_by_stable_user_id(session, stable_user_id)
         created = False
         if creator is None:
             creator = Creator(
-                source_url=request.source_url,
+                source_url=normalized_source_url,
                 resolved_url=resolved_url,
                 stable_user_id=stable_user_id,
                 domain_tag=request.domain_tag,
@@ -38,7 +44,7 @@ def create_creator(request: CreatorCreateRequest) -> dict:
             CreatorRepository.save(session, creator)
             created = True
         else:
-            creator.source_url = request.source_url
+            creator.source_url = normalized_source_url
             creator.resolved_url = resolved_url
             if request.domain_tag:
                 creator.domain_tag = request.domain_tag
