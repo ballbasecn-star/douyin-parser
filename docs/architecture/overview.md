@@ -8,6 +8,7 @@
 
 - CLI 入口：`main.py`
 - Web UI 与 API：`web/app.py`
+- App 分层实现：`app/`
 - Agent 客户端：`scripts/douyin_parser_client.py`
 - 容器运行：`Dockerfile` 与 `deploy/`
 
@@ -33,8 +34,16 @@
   负责对转录文本做 AI 分析
 - `douyin/cookie_manager.py`
   负责 Cookie 存储与 Webhook 更新
+- `app/api/`
+  负责 Flask 路由、请求适配与响应组装
+- `app/services/`
+  负责视频解析、系统配置、图片代理等业务服务编排
+- `app/schemas/`
+  负责 HTTP 请求结构定义与参数标准化
+- `app/infra/`
+  负责应用级配置、路径与基础设施常量
 - `web/app.py`
-  负责页面服务与 HTTP API
+  作为 Web 服务启动入口，负责装配 app 并启动运行
 
 ## 当前部署形态
 

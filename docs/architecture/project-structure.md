@@ -196,7 +196,7 @@ douyin-parser/
 - `douyin/parser.py`
 - `douyin/transcriber.py`
 - `douyin/analyzer.py`
-- `web/app.py`
+- `web/app.py`（当前已收敛为 Web 启动包装层）
 
 原因：
 
@@ -229,6 +229,18 @@ app/
 ### 兼容策略
 
 新服务层可以先直接调用现有 `douyin/parser.py` 中的单视频处理能力，而不是立刻重写整条链路。
+
+### 当前已完成的第一步重构
+
+当前仓库已经完成了第一轮结构化收敛：
+
+- `app/api/` 已承接 Web/API 路由
+- `app/services/` 已承接视频解析与系统服务编排
+- `app/schemas/` 已承接解析请求结构
+- `app/infra/` 已承接应用基础配置
+- `web/app.py` 现在只负责启动 Flask 服务和 Cookie Webhook
+
+这意味着后续新增能力应继续落在 `app/` 下，而不是再回到 `web/app.py` 堆逻辑。
 
 ## 测试结构建议
 
