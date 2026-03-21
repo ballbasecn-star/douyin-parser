@@ -35,8 +35,8 @@ class ParseVideoRequestTests(unittest.TestCase):
 
 
 class VideoParseServiceTests(unittest.TestCase):
-    @patch("app.services.video_parse_service.parse")
-    def test_run_video_parse_maps_request_to_core_parse(self, mock_parse):
+    @patch("app.services.video_parse_service.parse_video")
+    def test_run_video_parse_maps_request_to_core_parse(self, mock_parse_video):
         parse_request = ParseRequest(
             url="https://www.douyin.com/video/123",
             enable_transcript=True,
@@ -50,7 +50,7 @@ class VideoParseServiceTests(unittest.TestCase):
 
         run_video_parse(parse_request)
 
-        mock_parse.assert_called_once_with(
+        mock_parse_video.assert_called_once_with(
             share_text="https://www.douyin.com/video/123",
             enable_transcript=True,
             use_cloud=True,

@@ -8,11 +8,16 @@
 
 - `app/infra/douyin_signature.py`
 - `app/infra/douyin_web_client.py`
+- `app/infra/media_tools.py`
+- `app/infra/siliconflow_client.py`
+- `app/services/video_parse_service.py`
 - `app/services/video_fetch_service.py`
-- `douyin/parser.py`
-- `douyin/transcriber.py`
-- `douyin/analyzer.py`
+- `app/services/transcript_service.py`
+- `app/services/analysis_service.py`
 - `app/domain/video_info.py`
+- `douyin/parser.py`（兼容导出层）
+- `douyin/transcriber.py`（兼容导出层）
+- `douyin/analyzer.py`（兼容导出层）
 - `douyin/crawler.py`（兼容导出层）
 - `douyin/abogus.py`（兼容导出层）
 - `douyin/models.py`（兼容导出层）
@@ -30,25 +35,35 @@
 - 携带签名与请求头调用抖音 Web API
 - 解析短链重定向并提取 `aweme_id`
 
+### `media_tools.py`
+
+- 通过 `ffmpeg` 进行音频提取
+- 在必要时下载完整视频作为降级方案
+- 作为转录流程的媒体处理基础设施
+
 ### `video_fetch_service.py`
 
 - 提取抖音短链或完整视频链接
 - 将原始接口数据转换成 `VideoInfo`
 - 组织单视频抓取流程
 
-### `parser.py`
+### `video_parse_service.py`
 
 - 协调整条单视频处理流程
 - 为 SSE API 输出进度事件
 - 将转录和分析结果附加到 `VideoInfo`
 
-### `transcriber.py`
+### `transcript_service.py`
 
-- 通过 `ffmpeg` 从直链提取音频
-- 必要时降级为先下载完整视频
 - 执行本地转录或云端转录
+- 负责转录流程编排与临时文件清理
 
-### `analyzer.py`
+### `siliconflow_client.py`
+
+- 调用 SiliconFlow chat completions 接口
+- 为文案分析提供基础 API 客户端
+
+### `analysis_service.py`
 
 - 将转录文本发送给 SiliconFlow 聊天接口
 - 解析并标准化返回的 JSON 分析结果

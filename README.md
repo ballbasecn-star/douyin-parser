@@ -202,16 +202,17 @@ douyin-parser/
 │   ├── __init__.py                  # 包初始化，版本号
 │   ├── crawler.py                   # 兼容导出层（抓取逻辑已迁移到 app/services + app/infra）
 │   ├── abogus.py                    # 兼容导出层（签名算法已迁移到 app/infra）
-│   ├── parser.py                    # 主解析器入口（协调 crawler + transcriber）
+│   ├── parser.py                    # 兼容导出层（主解析流程已迁移到 app/services）
 │   ├── models.py                    # 兼容导出层（VideoInfo 已迁移到 app/domain）
-│   ├── transcriber.py               # 视频转录（下载 → ffmpeg → Whisper）
+│   ├── transcriber.py               # 兼容导出层（转录能力已迁移到 app/services + app/infra）
+│   ├── analyzer.py                  # 兼容导出层（文案分析已迁移到 app/services）
 │   └── cookie_manager.py            # 兼容导出层（Cookie 基础设施已迁移到 app/infra）
 ├── app/                             # 新后端主包
 │   ├── api/                         # Web/API 路由与请求适配
-│   ├── services/                    # 业务流程编排（含视频抓取服务）
+│   ├── services/                    # 业务流程编排（含抓取、转录、分析与主解析）
 │   ├── domain/                      # 领域模型（含 VideoInfo）
 │   ├── schemas/                     # 请求结构定义
-│   └── infra/                       # 应用配置、Cookie、签名与抖音请求基础设施
+│   └── infra/                       # 应用配置、Cookie、签名、媒体与抖音请求基础设施
 ├── chrome-cookie-sniffer/           # Chrome 浏览器扩展
 │   ├── manifest.json                # 扩展配置
 │   ├── background.js                # 请求拦截 + Cookie 捕获
@@ -249,11 +250,16 @@ douyin-parser/
 | 模块 | 职责 | 依赖 |
 |------|------|------|
 | `app/services/video_fetch_service.py` | 链接提取、视频数据解析、单视频抓取流程编排 | `app/infra/douyin_web_client.py`, `app/domain` |
+| `app/services/transcript_service.py` | 组织本地/云端转录流程与临时文件清理 | `app/infra/media_tools.py`, `faster-whisper` |
+| `app/services/analysis_service.py` | 组织 SiliconFlow 文案分析并解析结构化结果 | `app/infra/siliconflow_client.py` |
+| `app/services/video_parse_service.py` | 顶层单视频解析入口，协调抓取、转录和分析 | `video_fetch_service.py`, `transcript_service.py`, `analysis_service.py` |
 | `app/infra/douyin_web_client.py` | 构造请求参数、a_bogus 签名、调用抖音 Web API | `app/infra/douyin_signature.py`, `requests` |
 | `app/infra/douyin_signature.py` | 实现 a_bogus 签名算法（基于 SM3 哈希），生成请求防伪参数 | `gmssl` |
-| `parser.py` | 顶层解析入口，协调 `crawler` 获取数据和 `transcriber` 转录 | `crawler.py`, `transcriber.py` |
+| `app/infra/media_tools.py` | 音频提取、视频下载等媒体处理基础设施 | `ffmpeg`, `requests` |
 | `models.py` | `VideoInfo` 的兼容导出层，内部已迁移到 `app/domain` | — |
-| `transcriber.py` | 视频下载 → ffmpeg 提取音频 → faster-whisper/Groq 转录 | `faster-whisper`, `ffmpeg` |
+| `transcriber.py` | 兼容导出层，内部已迁移到 `app/services` / `app/infra` | — |
+| `analyzer.py` | 兼容导出层，内部已迁移到 `app/services` | — |
+| `parser.py` | 兼容导出层，内部已迁移到 `app/services` | — |
 | `cookie_manager.py` | 兼容导出层，Cookie 基础设施已迁移到 `app/infra` | — |
 
 ## 🍪 Cookie 管理

@@ -192,10 +192,10 @@ douyin-parser/
 
 以下内容暂时可以保留原位置，不必马上迁移：
 
-- `douyin/crawler.py`
-- `douyin/parser.py`
-- `douyin/transcriber.py`
-- `douyin/analyzer.py`
+- `douyin/crawler.py`（兼容导出层）
+- `douyin/parser.py`（兼容导出层）
+- `douyin/transcriber.py`（兼容导出层）
+- `douyin/analyzer.py`（兼容导出层）
 - `web/app.py`（当前已收敛为 Web 启动包装层）
 
 原因：
@@ -228,17 +228,17 @@ app/
 
 ### 兼容策略
 
-新服务层可以先直接调用现有 `douyin/parser.py` 中的单视频处理能力，而不是立刻重写整条链路。
+迁移完成后，`douyin/` 下原有文件优先保留为兼容导出层，对外维持旧路径；新的业务实现统一继续收口到 `app/`。
 
 ### 当前已完成的第一步重构
 
 当前仓库已经完成了第一轮结构化收敛：
 
 - `app/api/` 已承接 Web/API 路由
-- `app/services/` 已承接视频解析编排、系统服务编排和单视频抓取服务
+- `app/services/` 已承接视频抓取、转录、分析、主解析编排与系统服务
 - `app/domain/` 已承接单视频核心领域模型 `VideoInfo`
 - `app/schemas/` 已承接解析请求结构
-- `app/infra/` 已承接应用基础配置、Cookie 基础设施、抖音签名与 Web 请求客户端
+- `app/infra/` 已承接应用基础配置、Cookie 基础设施、抖音签名、Web 请求客户端与媒体处理基础设施
 - `web/app.py` 现在只负责启动 Flask 服务和 Cookie Webhook
 
 这意味着后续新增能力应继续落在 `app/` 下，而不是再回到 `web/app.py` 堆逻辑。

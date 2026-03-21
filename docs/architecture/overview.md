@@ -28,18 +28,28 @@
   负责 `a_bogus` 签名算法
 - `app/infra/douyin_web_client.py`
   负责抖音 Web 请求参数、签名和详情接口调用
+- `app/infra/media_tools.py`
+  负责音频提取、视频下载等媒体处理基础设施
+- `app/infra/siliconflow_client.py`
+  负责 SiliconFlow 聊天接口调用
 - `app/services/video_fetch_service.py`
   负责分享链接提取、视频数据解析和单视频抓取流程
-- `douyin/parser.py`
-  负责协调整条单视频处理流程
-- `douyin/transcriber.py`
-  负责提取音频并进行本地或云端转录
-- `douyin/analyzer.py`
+- `app/services/transcript_service.py`
+  负责本地与云端转录流程
+- `app/services/analysis_service.py`
   负责对转录文本做 AI 分析
+- `app/services/video_parse_service.py`
+  负责协调整条单视频处理流程
 - `douyin/crawler.py`
   作为兼容导出层，保留旧路径给 CLI 和外部调用
 - `douyin/abogus.py`
   作为兼容导出层，保留旧签名导入路径
+- `douyin/transcriber.py`
+  作为兼容导出层，保留旧转录导入路径
+- `douyin/analyzer.py`
+  作为兼容导出层，保留旧分析导入路径
+- `douyin/parser.py`
+  作为兼容导出层，保留旧主解析导入路径
 - `app/infra/cookie_store.py`
   负责 Cookie 存储、读取与全局管理器
 - `app/infra/cookie_webhook.py`
@@ -47,7 +57,7 @@
 - `app/api/`
   负责 Flask 路由、请求适配与响应组装
 - `app/services/`
-  负责视频解析、系统配置、图片代理等业务服务编排
+  负责视频抓取、转录、分析、主解析编排、系统配置和图片代理等业务服务
 - `app/domain/`
   负责领域模型与核心实体，当前已承接 `VideoInfo`
 - `app/schemas/`
