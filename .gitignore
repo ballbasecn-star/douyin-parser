@@ -10,3 +10,4 @@ deploy.sh
 data/
 release.env
 *.tar
+/.idea/dataSources.xml
