@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infra.db import Base
@@ -43,7 +43,7 @@ class Creator(Base, TimestampMixin):
     remark: Mapped[str] = mapped_column(Text, default="", nullable=False)
     status: Mapped[str] = mapped_column(String(32), default="active", nullable=False)
     last_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    sync_cursor: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    sync_cursor: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
 
     videos: Mapped[list["CreatorVideo"]] = relationship(
         back_populates="creator",

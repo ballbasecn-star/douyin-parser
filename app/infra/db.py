@@ -5,7 +5,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Iterator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -72,7 +72,31 @@ def init_database() -> None:
     """初始化数据库表结构。"""
     import app.repositories.models  # noqa: F401
 
-    Base.metadata.create_all(bind=get_engine())
+    engine = get_engine()
+    Base.metadata.create_all(bind=engine)
+    _ensure_schema_compatibility(engine)
+
+
+def _ensure_schema_compatibility(engine) -> None:
+    """在没有迁移工具前，做最小化的兼容性 schema 升级。"""
+    if engine.dialect.name != "postgresql":
+        return
+
+    inspector = inspect(engine)
+    table_names = set(inspector.get_table_names())
+    if "creators" not in table_names:
+        return
+
+    creator_columns = {column["name"]: column for column in inspector.get_columns("creators")}
+    sync_cursor_column = creator_columns.get("sync_cursor")
+    if sync_cursor_column is None:
+        return
+
+    if str(sync_cursor_column["type"]).upper() == "BIGINT":
+        return
+
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE creators ALTER COLUMN sync_cursor TYPE BIGINT"))
 
 
 def reset_database_state() -> None:
