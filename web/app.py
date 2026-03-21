@@ -7,9 +7,22 @@ Douyin Parser - Web 服务
 
 import logging
 
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - 可选依赖
+    load_dotenv = None
+
 from app import create_app
 from app.infra.cookie_webhook import start_webhook_background
 
+
+def load_env_if_available():
+    """按需加载项目根目录的 .env。"""
+    if load_dotenv is not None:
+        load_dotenv()
+
+
+load_env_if_available()
 app = create_app()
 logger = logging.getLogger(__name__)
 
