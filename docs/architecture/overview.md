@@ -41,16 +41,6 @@
   负责对转录文本做 AI 分析
 - `app/services/video_parse_service.py`
   负责协调整条单视频处理流程
-- `douyin/crawler.py`
-  作为兼容导出层，保留旧路径给 CLI 和外部调用
-- `douyin/abogus.py`
-  作为兼容导出层，保留旧签名导入路径
-- `douyin/transcriber.py`
-  作为兼容导出层，保留旧转录导入路径
-- `douyin/analyzer.py`
-  作为兼容导出层，保留旧分析导入路径
-- `douyin/parser.py`
-  作为兼容导出层，保留旧主解析导入路径
 - `app/infra/cookie_store.py`
   负责 Cookie 存储、读取与全局管理器
 - `app/infra/cookie_webhook.py`
@@ -71,6 +61,8 @@
   作为 Web 服务启动入口，负责装配 app 并启动运行
 - `main.py`
   作为 CLI 兼容包装层，转发到 `app/cli/main.py`
+
+当前仓库内部实现已经统一收口到 `app/`，不再保留旧的 `douyin/` 兼容导出层。
 
 ## 当前部署形态
 

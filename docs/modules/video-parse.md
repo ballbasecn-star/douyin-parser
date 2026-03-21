@@ -15,12 +15,6 @@
 - `app/services/transcript_service.py`
 - `app/services/analysis_service.py`
 - `app/domain/video_info.py`
-- `douyin/parser.py`（兼容导出层）
-- `douyin/transcriber.py`（兼容导出层）
-- `douyin/analyzer.py`（兼容导出层）
-- `douyin/crawler.py`（兼容导出层）
-- `douyin/abogus.py`（兼容导出层）
-- `douyin/models.py`（兼容导出层）
 
 ## 职责
 

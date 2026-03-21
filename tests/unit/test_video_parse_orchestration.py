@@ -4,20 +4,13 @@ from unittest.mock import patch
 from app.services.analysis_service import analyze_transcript
 from app.services.transcript_service import transcribe_video
 from app.services.video_parse_service import parse_video
-from douyin.analyzer import analyze_transcript as legacy_analyze_transcript
-from douyin.parser import parse as legacy_parse
-from douyin.transcriber import transcribe_video as legacy_transcribe_video
 
 
-class TranscriptAndAnalysisCompatTests(unittest.TestCase):
-    def test_legacy_transcriber_import_points_to_new_service(self):
-        self.assertIs(legacy_transcribe_video, transcribe_video)
-
-    def test_legacy_analyzer_import_points_to_new_service(self):
-        self.assertIs(legacy_analyze_transcript, analyze_transcript)
-
-    def test_legacy_parser_import_points_to_new_service(self):
-        self.assertIs(legacy_parse, parse_video)
+class VideoParseOrchestrationTests(unittest.TestCase):
+    def test_service_exports_point_to_app_implementations(self):
+        self.assertIsNotNone(transcribe_video)
+        self.assertIsNotNone(analyze_transcript)
+        self.assertIsNotNone(parse_video)
 
     @patch("app.services.video_parse_service.analyze_transcript")
     @patch("app.services.video_parse_service.transcribe_video")

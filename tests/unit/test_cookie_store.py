@@ -2,7 +2,6 @@ import tempfile
 import unittest
 
 from app.infra.cookie_store import CookieManager
-from douyin.cookie_manager import CookieManager as LegacyCookieManager
 
 
 class CookieStoreTestCase(unittest.TestCase):
@@ -23,10 +22,6 @@ class CookieStoreTestCase(unittest.TestCase):
                     "cookie_length": 10,
                 },
             )
-
-    def test_legacy_cookie_manager_import_still_points_to_new_impl(self):
-        self.assertIs(LegacyCookieManager, CookieManager)
-
 
 if __name__ == "__main__":
     unittest.main()

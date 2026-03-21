@@ -198,15 +198,6 @@ Cookie 管理:
 ```
 douyin-parser/
 ├── main.py                          # CLI 兼容入口（实际实现已迁移到 app/cli）
-├── douyin/                          # 核心模块
-│   ├── __init__.py                  # 包初始化，版本号
-│   ├── crawler.py                   # 兼容导出层（抓取逻辑已迁移到 app/services + app/infra）
-│   ├── abogus.py                    # 兼容导出层（签名算法已迁移到 app/infra）
-│   ├── parser.py                    # 兼容导出层（主解析流程已迁移到 app/services）
-│   ├── models.py                    # 兼容导出层（VideoInfo 已迁移到 app/domain）
-│   ├── transcriber.py               # 兼容导出层（转录能力已迁移到 app/services + app/infra）
-│   ├── analyzer.py                  # 兼容导出层（文案分析已迁移到 app/services）
-│   └── cookie_manager.py            # 兼容导出层（Cookie 基础设施已迁移到 app/infra）
 ├── app/                             # 新后端主包
 │   ├── api/                         # Web/API 路由与请求适配
 │   ├── cli/                         # CLI 命令入口与子命令实现
@@ -257,11 +248,7 @@ douyin-parser/
 | `app/infra/douyin_web_client.py` | 构造请求参数、a_bogus 签名、调用抖音 Web API | `app/infra/douyin_signature.py`, `requests` |
 | `app/infra/douyin_signature.py` | 实现 a_bogus 签名算法（基于 SM3 哈希），生成请求防伪参数 | `gmssl` |
 | `app/infra/media_tools.py` | 音频提取、视频下载等媒体处理基础设施 | `ffmpeg`, `requests` |
-| `models.py` | `VideoInfo` 的兼容导出层，内部已迁移到 `app/domain` | — |
-| `transcriber.py` | 兼容导出层，内部已迁移到 `app/services` / `app/infra` | — |
-| `analyzer.py` | 兼容导出层，内部已迁移到 `app/services` | — |
-| `parser.py` | 兼容导出层，内部已迁移到 `app/services` | — |
-| `cookie_manager.py` | 兼容导出层，Cookie 基础设施已迁移到 `app/infra` | — |
+| `app/domain/video_info.py` | 定义 `VideoInfo` 领域模型与序列化输出 | — |
 
 ## 🍪 Cookie 管理
 
@@ -344,22 +331,22 @@ ffmpeg            音频提取（系统依赖）
 ### Q: 如何在代码中调用？
 
 ```python
-from douyin.parser import parse
+from app.services.video_parse_service import parse_video
 
 # 基本解析
-result = parse("https://v.douyin.com/xxxxx/", enable_transcript=False)
+result = parse_video("https://v.douyin.com/xxxxx/", enable_transcript=False)
 print(result.title)
 print(result.author)
 print(result.to_dict())  # JSON 序列化
 
 # 含转录
-result = parse("https://v.douyin.com/xxxxx/", model_size="small")
+result = parse_video("https://v.douyin.com/xxxxx/", model_size="small")
 print(result.transcript)
 ```
 
 ### Q: a_bogus 签名失败？
 
-**A:** `abogus.py` 中的 `ua_code` 基于 `Chrome/90.0.4430.212` 生成。如果抖音更新了反爬策略，可能需要更新签名算法。
+**A:** `app/infra/douyin_signature.py` 中的 `ua_code` 基于 `Chrome/90.0.4430.212` 生成。如果抖音更新了反爬策略，可能需要更新签名算法。
 
 ### Q: 支持哪些链接格式？
 
@@ -382,7 +369,7 @@ print(result.transcript)
 
 本项目采用 [MIT License](LICENSE) 开源。
 
-> **注意**：`douyin/abogus.py` 文件源自 [TikTokDownloader](https://github.com/JoeanAmier/TikTokDownloader)，原始协议为 GPL-3.0。如需商用，请注意该文件的许可约束。
+> **注意**：`app/infra/douyin_signature.py` 文件源自 [TikTokDownloader](https://github.com/JoeanAmier/TikTokDownloader)，原始协议为 GPL-3.0。如需商用，请注意该文件的许可约束。
 
 ## 🤝 贡献
 

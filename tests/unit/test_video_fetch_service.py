@@ -1,9 +1,6 @@
 import unittest
 
-from app.infra.douyin_signature import ABogus
 from app.services.video_fetch_service import extract_share_link, parse_video_data
-from douyin.abogus import ABogus as LegacyABogus
-from douyin.crawler import extract_share_link as legacy_extract_share_link
 
 
 class VideoFetchServiceTests(unittest.TestCase):
@@ -43,11 +40,6 @@ class VideoFetchServiceTests(unittest.TestCase):
         self.assertEqual(info.like_count, 20)
         self.assertEqual(info.cover_url, "https://example.com/cover.jpg")
         self.assertEqual(info.hashtags, ["#AI", "#抖音"])
-
-    def test_legacy_imports_still_point_to_new_locations(self):
-        self.assertIs(LegacyABogus, ABogus)
-        self.assertIs(legacy_extract_share_link, extract_share_link)
-
 
 if __name__ == "__main__":
     unittest.main()
