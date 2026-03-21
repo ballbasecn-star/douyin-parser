@@ -17,11 +17,12 @@ def resolve_creator_identity(source_url: str) -> tuple[str, str]:
     if not normalized_url:
         raise ValueError("请输入有效的博主主页链接")
 
-    resolved_url = resolve_redirect_url(normalized_url) or normalized_url
-    stable_user_id = extract_stable_user_id(resolved_url)
+    resolved_candidate = resolve_redirect_url(normalized_url) or normalized_url
+    stable_user_id = extract_stable_user_id(resolved_candidate)
     if not stable_user_id:
         raise ValueError("无法从主页链接中解析稳定博主标识，请确认链接是否有效")
-    return stable_user_id, resolved_url
+    canonical_url = f"https://www.douyin.com/user/{stable_user_id}"
+    return stable_user_id, canonical_url
 
 
 def create_creator(request: CreatorCreateRequest) -> dict:

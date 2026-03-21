@@ -430,6 +430,12 @@ function formatDurationMs(ms) {
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
+function shortenStableId(value) {
+    if (!value) return '';
+    if (value.length <= 18) return value;
+    return `${value.slice(0, 8)}...${value.slice(-6)}`;
+}
+
 function extractHashtags(text) {
     if (!text) return [];
     return Array.from(new Set((text.match(/#[^\s#]+/g) || []).slice(0, 10)));
@@ -685,7 +691,7 @@ function renderCreatorList() {
 
         const handle = creator.display_handle
             ? `@${escapeHtml(creator.display_handle)}`
-            : escapeHtml(creator.stable_user_id);
+            : `SecUID · ${escapeHtml(shortenStableId(creator.stable_user_id))}`;
         const syncTime = creator.last_synced_at ? formatDateTime(creator.last_synced_at) : '尚未同步';
         const statusClass = creator.status === 'paused' ? 'status-pill paused' : 'status-pill';
         const statusText = creator.status === 'paused' ? 'Paused' : 'Active';
@@ -694,7 +700,7 @@ function renderCreatorList() {
             <div class="creator-avatar">${avatar}</div>
             <div class="creator-main">
                 <div class="creator-name-row">
-                    <div class="creator-name">${escapeHtml(creator.nickname || creator.stable_user_id)}</div>
+                    <div class="creator-name">${escapeHtml(creator.nickname || '待识别昵称')}</div>
                     <span class="${statusClass}">${statusText}</span>
                 </div>
                 <div class="creator-handle">${handle}</div>
@@ -750,9 +756,9 @@ function renderCreatorSummary() {
         return;
     }
 
-    document.getElementById('activeCreatorName').textContent = activeCreator.nickname || activeCreator.stable_user_id;
+    document.getElementById('activeCreatorName').textContent = activeCreator.nickname || '待识别昵称';
     document.getElementById('activeCreatorMeta').textContent = [
-        activeCreator.display_handle ? `@${activeCreator.display_handle}` : activeCreator.stable_user_id,
+        activeCreator.display_handle ? `@${activeCreator.display_handle}` : `SecUID · ${shortenStableId(activeCreator.stable_user_id)}`,
         activeCreator.resolved_url || activeCreator.source_url,
     ].filter(Boolean).join(' · ');
 

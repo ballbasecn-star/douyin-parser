@@ -56,6 +56,7 @@ class CreatorMonitorServiceTests(unittest.TestCase):
         self.assertEqual(result["creator"]["stable_user_id"], "MS4wLjABAAAA-test")
         self.assertEqual(result["creator"]["domain_tag"], "AI")
         self.assertEqual(result["sync"]["synced_count"], 0)
+        self.assertEqual(result["creator"]["resolved_url"], "https://www.douyin.com/user/MS4wLjABAAAA-test")
 
     @patch("app.services.creator_service.sync_creator_videos")
     @patch("app.services.creator_service.resolve_redirect_url")
@@ -126,6 +127,30 @@ class CreatorMonitorServiceTests(unittest.TestCase):
         self.assertEqual(result["creator"]["nickname"], "测试博主")
         self.assertEqual(videos[0]["video_id"], "video-1")
         self.assertEqual(videos[0]["like_count"], 10)
+
+    @patch("app.services.creator_sync_service.fetch_creator_posts")
+    def test_sync_creator_videos_raises_when_list_empty_and_profile_missing(self, mock_fetch_creator_posts):
+        with session_scope() as session:
+            creator = Creator(
+                source_url="https://v.douyin.com/creator/",
+                resolved_url="https://www.douyin.com/user/MS4wLjABAAAA-empty",
+                stable_user_id="MS4wLjABAAAA-empty",
+                nickname="",
+                status="active",
+            )
+            session.add(creator)
+            session.flush()
+            creator_id = creator.id
+
+        mock_fetch_creator_posts.return_value = {
+            "status_code": 0,
+            "has_more": False,
+            "max_cursor": 0,
+            "aweme_list": [],
+        }
+
+        with self.assertRaisesRegex(ValueError, "未获取到该博主的作品列表"):
+            sync_creator_videos(creator_id, CreatorSyncRequest(max_cursor=0, count=20))
 
     @patch("app.services.video_analysis_service.parse_video")
     def test_analyze_stored_video_persists_analysis_result(self, mock_parse_video):

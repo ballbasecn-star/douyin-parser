@@ -20,6 +20,17 @@ def _to_datetime(timestamp: int) -> datetime | None:
     return datetime.fromtimestamp(timestamp, tz=timezone.utc)
 
 
+def _extract_creator_profile(raw_response: dict) -> dict:
+    """从博主列表响应中尽量提取博主资料。"""
+    for key in ("user", "user_info", "author"):
+        value = raw_response.get(key)
+        if isinstance(value, dict):
+            user_obj = value.get("user") if isinstance(value.get("user"), dict) else value
+            if isinstance(user_obj, dict):
+                return user_obj
+    return {}
+
+
 def sync_creator_videos(creator_id: int, sync_request: CreatorSyncRequest | None = None) -> dict:
     """同步博主视频列表。"""
     request = sync_request or CreatorSyncRequest(max_cursor=0, count=20)
@@ -45,11 +56,24 @@ def sync_creator_videos(creator_id: int, sync_request: CreatorSyncRequest | None
     synced_videos: list[dict] = []
     synced_count = 0
     now = datetime.now(timezone.utc)
+    creator_profile = _extract_creator_profile(raw_response)
 
     with session_scope() as session:
         creator = CreatorRepository.get_by_id(session, creator_id)
         if creator is None:
             raise ValueError("博主不存在")
+
+        if creator_profile:
+            creator.nickname = creator_profile.get("nickname", creator.nickname)
+            creator.display_handle = (
+                creator_profile.get("unique_id", "")
+                or creator_profile.get("short_id", "")
+                or creator.display_handle
+            )
+            avatar = creator_profile.get("avatar_thumb", {}) or creator_profile.get("avatar_medium", {}) or {}
+            avatar_urls = avatar.get("url_list", []) if isinstance(avatar, dict) else []
+            if avatar_urls:
+                creator.avatar_url = avatar_urls[0]
 
         for item in aweme_list:
             info = parse_video_data(item)
@@ -86,6 +110,9 @@ def sync_creator_videos(creator_id: int, sync_request: CreatorSyncRequest | None
                 avatar_urls = avatar.get("url_list", []) if isinstance(avatar, dict) else []
                 if avatar_urls:
                     creator.avatar_url = avatar_urls[0]
+
+        if not aweme_list and not creator.nickname:
+            raise ValueError("未获取到该博主的作品列表，可能是 Cookie 权限不足或主页接口仍需适配")
 
         creator.last_synced_at = now
         creator.sync_cursor = int(raw_response.get("max_cursor") or 0)

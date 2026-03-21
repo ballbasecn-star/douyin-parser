@@ -247,7 +247,7 @@ def fetch_creator_posts(
     signed_url = sign_api_url(POST_LIST_API, params)
 
     headers = dict(DEFAULT_HEADERS)
-    headers["Referer"] = referer_url or f"https://www.douyin.com/user/{stable_user_id}"
+    headers["Referer"] = f"https://www.douyin.com/user/{stable_user_id}"
     if cookie:
         headers["Cookie"] = cookie
 
@@ -258,6 +258,12 @@ def fetch_creator_posts(
         if response.status_code == 200:
             data = response.json()
             if data.get("status_code") == 0:
+                logger.info(
+                    "博主视频列表响应成功: aweme_count=%s has_more=%s max_cursor=%s",
+                    len(data.get("aweme_list") or []),
+                    data.get("has_more"),
+                    data.get("max_cursor"),
+                )
                 return data
             logger.warning(
                 "博主列表 API 状态码异常: %s, %s",
