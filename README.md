@@ -22,10 +22,10 @@
 
 - 🔗 **智能链接解析** — 支持抖音分享文本、短链接、完整链接，自动提取视频 ID
 - 📊 **完整视频数据** — 标题、作者、时长、播放量、点赞、评论、收藏、封面等
-- 🎙️ **视频语音转录** — 基于 [faster-whisper](https://github.com/SYSTRAN/faster-whisper) 将视频内语音转为文字
+- 🎙️ **视频语音转录** — 默认支持 SiliconFlow / Groq 云端转录，可选启用本地 [faster-whisper](https://github.com/SYSTRAN/faster-whisper)
 - ☁️ **云端转录** — 可选 [Groq API](https://groq.com/) 或 SiliconFlow 云端快速转录
 - 🧠 **AI 爆款文案拆解** — 一键提炼黄金前三秒、文案框架、情绪留存点，支持 DeepSeek 等多模型
-- 🖥️ **高颜值 Web UI** — 赛博朋克深色主题，支持 SSE 服务端推送渐进式渲染与实时系统日志
+- 🖥️ **高颜值 Web UI** — 浅色 SaaS 工作台风格，支持 SSE 服务端推送渐进式渲染与实时系统日志
 - 🍪 **Cookie 自动管理** — 内置 Webhook 服务器 + Chrome 扩展，自动无感更新 Cookie
 - 🔒 **完全本地化** — 零远程中间服务依赖，直接与抖音 API 通信
 - 📦 **命令行工具** — 简洁的 CLI 界面，支持 JSON 输出，易于集成到其他系统
@@ -85,13 +85,16 @@
 git clone https://github.com/your-username/douyin-parser.git
 cd douyin-parser
 
-# 2. 安装依赖
+# 2. 安装依赖（默认云端版）
 pip install -r requirements.txt
 
-# 3. 设置抖音 Cookie（必须，详见"Cookie 管理"章节）
+# 3. 如果需要本地 Whisper，再额外安装
+pip install -r requirements.local-whisper.txt
+
+# 4. 设置抖音 Cookie（必须，详见"Cookie 管理"章节）
 python main.py cookie set "你的抖音Cookie字符串"
 
-# 4. 验证安装
+# 5. 验证安装
 python main.py --no-transcript "抖音分享链接"
 ```
 
@@ -119,7 +122,7 @@ python -m web.app --port 8081
 ```
 
 > 浏览器访问 `http://localhost:8081` 即可体验！
-> **Web 端特性**：暗黑科技风 UI、SSE 流式渐进渲染（解析、转录、拆解分步展示）、实时后端执行日志跟踪。
+> **Web 端特性**：浅色 SaaS 工作台风格、SSE 流式渐进渲染（解析、转录、拆解分步展示）、实时后端执行日志跟踪。
 
 ### 📦 命令行基本用法
 
@@ -143,7 +146,7 @@ python main.py
 ### 语音转录选项
 
 ```bash
-# 本地转录 — 默认使用 large-v3 模型（最佳中文效果，首次需下载 3GB）
+# 本地转录 — 需要先安装 `requirements.local-whisper.txt`
 python main.py "分享文本"
 
 # 选择更小的模型（下载快，精度略低）
@@ -164,7 +167,43 @@ python main.py --cloud "分享文本"
 | `small` | 488 MB | ★★★★☆ | 中 | 性价比首选 |
 | `medium` | 1.5 GB | ★★★★☆ | 较慢 | 高精度 |
 | `large-v3` | 3 GB | ★★★★★ | 慢 | 最佳效果 |
-| Groq 云端 | — | ★★★★★ | 极快 | 有网络时首选 |
+| SiliconFlow / Groq 云端 | — | ★★★★★ | 极快 | 默认推荐 |
+
+## 🐳 Docker 构建加速
+
+当前项目采用“两层镜像”策略：
+
+- 基础镜像：固定安装 `ffmpeg`，并切到国内 Debian 源
+- 业务镜像：默认只安装云端转录依赖，不再默认安装 `faster-whisper`
+
+推荐流程：
+
+```bash
+# 1. 先构建一次基础镜像（通常只需偶尔执行）
+docker buildx build \
+  --platform linux/arm64 \
+  -f Dockerfile.base \
+  -t ballbasecn/douyin-parser-base:python3.11-bookworm \
+  --load \
+  .
+
+# 2. 本地功能验证时，优先构建本机架构镜像
+docker build \
+  -t ballbasecn/douyin-parser:local \
+  .
+
+# 3. 如果需要本地 Whisper 版本，再切换依赖文件
+docker build \
+  -t ballbasecn/douyin-parser:local-whisper \
+  --build-arg REQUIREMENTS_FILE=requirements.local-whisper.txt \
+  .
+```
+
+说明：
+
+- 本地验证时，不建议默认构建 `linux/amd64`
+- 真正发生产时，再单独构建 `linux/amd64`
+- 生产构建前，应确保目标环境已经能拉到或预先加载 `ballbasecn/douyin-parser-base:python3.11-bookworm`
 
 ### 完整命令参考
 
@@ -211,8 +250,10 @@ douyin-parser/
 │   ├── popup.html                   # 扩展弹窗界面
 │   ├── popup.js                     # 弹窗交互逻辑
 │   └── README.md                    # 扩展使用说明
-├── cookie_data/                     # Cookie 存储目录（自动创建）
-├── requirements.txt                 # Python 依赖
+├── cookie_data/                     # Cookie 存储目录（运行时挂载，默认不打入镜像）
+├── requirements.txt                 # 默认云端版 Python 依赖
+├── requirements.local-whisper.txt   # 本地 Whisper 扩展依赖
+├── Dockerfile.base                  # 预装 ffmpeg 的基础镜像
 ├── .env.example                     # 环境变量模板
 └── .gitignore
 ```

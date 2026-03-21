@@ -1,0 +1,16 @@
+ARG TARGETPLATFORM
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm
+
+ARG APT_MIRROR=mirrors.tuna.tsinghua.edu.cn
+ARG APT_SECURITY_MIRROR=mirrors.tuna.tsinghua.edu.cn
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# 将 Debian 源切到国内镜像，并将 ffmpeg 固定到基础镜像层。
+# 业务镜像后续直接复用这个基础镜像，避免每次重新安装系统依赖。
+RUN sed -i "s|http://deb.debian.org/debian|https://${APT_MIRROR}/debian|g" /etc/apt/sources.list.d/debian.sources \
+    && sed -i "s|http://deb.debian.org/debian-security|https://${APT_SECURITY_MIRROR}/debian-security|g" /etc/apt/sources.list.d/debian.sources \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
