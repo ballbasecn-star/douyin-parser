@@ -7,12 +7,17 @@
     <title>Douyin Parser — 抖音视频解析工具</title>
     <meta name="description" content="智能解析抖音视频信息，提取完整文案，AI 语音转录">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='16' fill='%23f4f7f4'/%3E%3Cpath d='M24 8 8 15.2 24 22.6 40 15.2 24 8Z' fill='%230f766e'/%3E%3Cpath d='M8 28.6 24 36l16-7.4' stroke='%23164e63' stroke-width='3.2' stroke-linecap='round'/%3E%3Cpath d='M8 21.8 24 29.2 40 21.8' stroke='%230f766e' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
+    <a class="skip-link" href="#singleParser">跳到主要内容</a>
     <!-- 背景光效 -->
     <div class="bg-glow bg-glow-1"></div>
     <div class="bg-glow bg-glow-2"></div>
@@ -24,22 +29,22 @@
         <div class="nav-brand">
             <div class="nav-logo">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#grad1)" opacity="0.9" />
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#grad1)" opacity="0.92" />
                     <path d="M2 17L12 22L22 17" stroke="url(#grad1)" stroke-width="2" stroke-linecap="round" />
                     <path d="M2 12L12 17L22 12" stroke="url(#grad1)" stroke-width="2" stroke-linecap="round" />
                     <defs>
                         <linearGradient id="grad1" x1="2" y1="2" x2="22" y2="22">
-                            <stop stop-color="#818cf8" />
-                            <stop offset="1" stop-color="#c084fc" />
+                            <stop stop-color="#0f766e" />
+                            <stop offset="1" stop-color="#164e63" />
                         </linearGradient>
                     </defs>
                 </svg>
             </div>
             <div class="nav-brand-text">
                 <span class="nav-title">Douyin Parser</span>
-                <span class="nav-subtitle">林克AI实战录</span>
+                <span class="nav-subtitle">内容解析与博主观察工作台</span>
             </div>
-            <span class="nav-badge">v1.0</span>
+            <span class="nav-badge">Workspace</span>
         </div>
         <div class="nav-right">
             <div class="cookie-indicator" id="cookieIndicator" title="Cookie 状态">
@@ -59,15 +64,54 @@
     <!-- 主内容 -->
     <main class="main">
         <!-- Hero 区域 -->
-        <section class="hero narrow-section">
-            <h1 class="hero-title">
-                <span class="hero-gradient">智能解析</span>抖音视频
-            </h1>
-            <p class="hero-subtitle">粘贴视频链接做单条深度解析，或直接建立你的对标博主内容库</p>
+        <section class="hero">
+            <div class="hero-shell">
+                <div class="hero-copy">
+                    <span class="section-kicker hero-kicker">Video Intelligence Workspace</span>
+                    <h1 class="hero-title">
+                        用一套轻量化工作台，完成
+                        <span class="hero-gradient">视频解析、同行监控与文案沉淀</span>
+                    </h1>
+                    <p class="hero-subtitle">
+                        上半区处理单条视频的转录与爆款拆解，下半区维护你的对标博主库。适合把灵感收集、数据观察和复盘动作收进同一个页面。
+                    </p>
+                    <div class="hero-actions">
+                        <a class="action-btn primary" href="#singleParser">开始单条解析</a>
+                        <a class="action-btn" href="#creatorMonitor">进入博主监控</a>
+                    </div>
+                </div>
+                <aside class="hero-panel" aria-label="工作台能力概览">
+                    <div class="hero-metrics">
+                        <div class="hero-metric">
+                            <span class="hero-metric-label">单条深挖</span>
+                            <strong class="hero-metric-value">解析标题、口播与结构钩子</strong>
+                        </div>
+                        <div class="hero-metric">
+                            <span class="hero-metric-label">同行观察</span>
+                            <strong class="hero-metric-value">建立长期可积累的博主样本库</strong>
+                        </div>
+                        <div class="hero-metric">
+                            <span class="hero-metric-label">后续生成</span>
+                            <strong class="hero-metric-value">把分析结果转成选题与文案素材</strong>
+                        </div>
+                    </div>
+                    <div class="hero-note">
+                        <span class="hero-note-label">推荐路径</span>
+                        <p>先解析一条样本视频，再同步同领域博主的作品库，最后只挑最值得的内容做深度分析。</p>
+                    </div>
+                </aside>
+            </div>
         </section>
 
         <!-- 输入区域 -->
-        <section class="input-section narrow-section">
+        <section class="input-section narrow-section" id="singleParser">
+            <div class="section-heading section-heading-compact">
+                <div>
+                    <span class="section-kicker">Single Video Lab</span>
+                    <h2 class="section-title">单条视频深度解析</h2>
+                    <p class="workspace-subtitle">适合先验证某条视频的完整信息、转录内容和 AI 拆解结果，再决定是否沉淀进素材库。</p>
+                </div>
+            </div>
             <div class="input-card">
                 <div class="input-wrapper">
                     <input type="text" id="urlInput" class="url-input" placeholder="粘贴抖音分享文本或链接..." autocomplete="off"
@@ -109,9 +153,7 @@
                         </select>
                     </div>
                     <div class="option-group" id="analyzeGroup" style="display:none">
-                        <label class="option-label"
-                            style="color: var(--accent-1); text-shadow: 0 0 10px rgba(129, 140, 248, 0.4);">🧠 AI
-                            爆款拆解</label>
+                        <label class="option-label option-label-accent">AI 爆款拆解</label>
                         <label class="switch">
                             <input type="checkbox" id="analyzeToggle">
                             <span class="slider round"></span>
@@ -122,7 +164,7 @@
         </section>
 
         <!-- 博主监控工作台 -->
-        <section class="creator-section">
+        <section class="creator-section" id="creatorMonitor">
             <div class="section-heading">
                 <div>
                     <span class="section-kicker">Creator Monitor</span>
@@ -277,13 +319,13 @@
 
                 <!-- 统计数据 -->
                 <div class="stats-row">
-                    <div class="stat-item"><span class="stat-emoji">❤️</span><span class="stat-value"
+                    <div class="stat-item"><span class="stat-emoji">赞</span><span class="stat-value"
                             id="statLikes">0</span><span class="stat-label">点赞</span></div>
-                    <div class="stat-item"><span class="stat-emoji">💬</span><span class="stat-value"
+                    <div class="stat-item"><span class="stat-emoji">评</span><span class="stat-value"
                             id="statComments">0</span><span class="stat-label">评论</span></div>
-                    <div class="stat-item"><span class="stat-emoji">🔄</span><span class="stat-value"
+                    <div class="stat-item"><span class="stat-emoji">转</span><span class="stat-value"
                             id="statShares">0</span><span class="stat-label">分享</span></div>
-                    <div class="stat-item"><span class="stat-emoji">⭐</span><span class="stat-value"
+                    <div class="stat-item"><span class="stat-emoji">藏</span><span class="stat-value"
                             id="statCollects">0</span><span class="stat-label">收藏</span></div>
                 </div>
 
@@ -293,7 +335,7 @@
                 <!-- 描述 -->
                 <div class="content-block">
                     <div class="block-header" onclick="toggleBlock('descBlock')">
-                        <h3>📝 视频描述</h3>
+                        <h3>视频描述</h3>
                         <div class="block-actions">
                             <button class="copy-btn" onclick="event.stopPropagation();copyText('descContent')"
                                 title="复制">
@@ -317,7 +359,7 @@
                 <!-- 爆款分析面板 -->
                 <div class="content-block glow-border" id="analysisBlock" style="display:none">
                     <div class="block-header" onclick="toggleBlock('analysisBody')">
-                        <h3 class="gradient-text">📊 爆款文案深度剖析 (AI)</h3>
+                        <h3 class="gradient-text">AI 爆款文案拆解</h3>
                         <div class="block-actions" id="analysisActions" style="display:none">
                             <button class="copy-btn" onclick="event.stopPropagation();copyText('analysisBody')"
                                 title="复制">
@@ -346,24 +388,24 @@
 
                     <div class="block-body expanded analysis-body" id="analysisBody" style="display:none">
                         <div class="analysis-item">
-                            <div class="analysis-label">🎯 黄金前3秒 <span class="tag tag-sm" id="analysisHookType"></span>
+                            <div class="analysis-label">黄金前 3 秒 <span class="tag tag-sm" id="analysisHookType"></span>
                             </div>
                             <div class="analysis-content highlight-box" id="analysisHookText"></div>
                         </div>
                         <div class="analysis-item" id="analysisStructWrapper">
-                            <div class="analysis-label">🏗️ 内容框架</div>
+                            <div class="analysis-label">内容框架</div>
                             <div class="analysis-content" id="analysisStructText"></div>
                         </div>
                         <div class="analysis-item" id="analysisRetentionWrapper">
-                            <div class="analysis-label">🔥 情绪留存点</div>
+                            <div class="analysis-label">情绪留存点</div>
                             <ul class="analysis-list" id="analysisRetentionList"></ul>
                         </div>
                         <div class="analysis-item" id="analysisScenarioWrapper">
-                            <div class="analysis-label">🎬 场景化表达</div>
+                            <div class="analysis-label">场景化表达</div>
                             <ul class="analysis-list" id="analysisScenarioList"></ul>
                         </div>
                         <div class="analysis-item" id="analysisCtaWrapper">
-                            <div class="analysis-label">📣 互动引导</div>
+                            <div class="analysis-label">互动引导</div>
                             <div class="analysis-content highlight-box muted" id="analysisCtaText"></div>
                         </div>
                     </div>
@@ -372,7 +414,7 @@
                 <!-- 转录 -->
                 <div class="content-block" id="transcriptBlock" style="display:none">
                     <div class="block-header" onclick="toggleBlock('transcriptBody')">
-                        <h3>🎙️ 语音转录文案</h3>
+                        <h3>语音转录文案</h3>
                         <div class="block-actions" id="transcriptActions" style="display:none">
                             <button class="copy-btn" onclick="event.stopPropagation();copyText('transcriptContent')"
                                 title="复制">
@@ -437,7 +479,7 @@
 
         <!-- 错误提示 -->
         <div class="error-card narrow-section" id="errorCard" style="display:none">
-            <div class="error-icon">⚠️</div>
+            <div class="error-icon">!</div>
             <p class="error-text" id="errorText"></p>
         </div>
 
@@ -452,25 +494,25 @@
     <div class="modal-overlay" id="settingsModal" style="display:none" onclick="closeSettings(event)">
         <div class="modal-card" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <h3>⚙️ 设置</h3>
+                <h3>工作台设置</h3>
                 <button class="btn-icon" onclick="closeSettings()">✕</button>
             </div>
             <div class="modal-body">
                 <div class="setting-group">
-                    <label class="setting-label">🍪 Cookie 管理</label>
+                    <label class="setting-label">Cookie 管理</label>
                     <div class="cookie-status" id="cookieStatusDetail"></div>
                     <textarea class="cookie-input" id="cookieInput" placeholder="粘贴你的抖音 Cookie..." rows="4"></textarea>
                     <button class="setting-btn" onclick="saveCookie()">保存 Cookie</button>
                 </div>
                 <div class="setting-group">
-                    <label class="setting-label">☁️ Groq API Key</label>
+                    <label class="setting-label">Groq API Key</label>
                     <input type="password" class="setting-input" id="groqKeyInput" placeholder="gsk_xxxxxxxx...">
                     <p class="setting-hint">使用 Groq 云端模式时需要。<a href="https://console.groq.com/keys"
                             target="_blank">免费获取</a></p>
                     <button class="setting-btn" onclick="saveGroqKey()">保存</button>
                 </div>
                 <div class="setting-group">
-                    <label class="setting-label">🚀 SiliconFlow API Key</label>
+                    <label class="setting-label">SiliconFlow API Key</label>
                     <input type="password" class="setting-input" id="siliconflowKeyInput" placeholder="sk-xxxxxxxx...">
                     <p class="setting-hint">使用 SiliconFlow 模式时需要（国内推荐）。<a href="https://cloud.siliconflow.cn"
                             target="_blank">免费注册</a></p>
@@ -478,7 +520,7 @@
                 </div>
                 <!-- 拆解模型配置 -->
                 <div class="setting-group">
-                    <label class="setting-label">🧠 爆款拆解大模型</label>
+                    <label class="setting-label">爆款拆解大模型</label>
                     <input type="text" class="setting-input" id="aiModelInput" placeholder="请输入模型名称..."
                         value="Pro/deepseek-ai/DeepSeek-V3.2">
                     <p class="setting-hint">用于文案分析的模型名称（目前默认走 SiliconFlow 接口）。<br>推荐：Pro/deepseek-ai/DeepSeek-V3.2</p>
@@ -493,9 +535,9 @@
 
     <!-- Footer -->
     <footer class="site-footer">
-        <span class="footer-brand">林克AI实战录</span>
-        <span class="footer-sep">·</span>
-        <span class="footer-text">Douyin Parser</span>
+        <span class="footer-brand">Douyin Parser</span>
+        <span class="footer-sep">/</span>
+        <span class="footer-text">林克 AI 实战录 · 内容研究工作台</span>
     </footer>
 
     <script src="/static/app.js"></script>
