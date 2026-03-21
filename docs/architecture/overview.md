@@ -24,14 +24,22 @@
 
 ## 主要模块
 
-- `douyin/crawler.py`
-  负责解析分享链接、生成签名、请求抖音详情接口、解析原始视频数据
+- `app/infra/douyin_signature.py`
+  负责 `a_bogus` 签名算法
+- `app/infra/douyin_web_client.py`
+  负责抖音 Web 请求参数、签名和详情接口调用
+- `app/services/video_fetch_service.py`
+  负责分享链接提取、视频数据解析和单视频抓取流程
 - `douyin/parser.py`
   负责协调整条单视频处理流程
 - `douyin/transcriber.py`
   负责提取音频并进行本地或云端转录
 - `douyin/analyzer.py`
   负责对转录文本做 AI 分析
+- `douyin/crawler.py`
+  作为兼容导出层，保留旧路径给 CLI 和外部调用
+- `douyin/abogus.py`
+  作为兼容导出层，保留旧签名导入路径
 - `app/infra/cookie_store.py`
   负责 Cookie 存储、读取与全局管理器
 - `app/infra/cookie_webhook.py`
@@ -45,7 +53,7 @@
 - `app/schemas/`
   负责 HTTP 请求结构定义与参数标准化
 - `app/infra/`
-  负责应用级配置、路径与基础设施常量，并承接 Cookie 基础设施
+  负责应用级配置、路径与基础设施常量，并承接 Cookie、签名和抖音 Web 客户端
 - `web/app.py`
   作为 Web 服务启动入口，负责装配 app 并启动运行
 

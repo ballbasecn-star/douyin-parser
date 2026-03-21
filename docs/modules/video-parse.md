@@ -6,23 +6,35 @@
 
 ## 相关文件
 
-- `douyin/crawler.py`
+- `app/infra/douyin_signature.py`
+- `app/infra/douyin_web_client.py`
+- `app/services/video_fetch_service.py`
 - `douyin/parser.py`
 - `douyin/transcriber.py`
 - `douyin/analyzer.py`
 - `app/domain/video_info.py`
+- `douyin/crawler.py`（兼容导出层）
+- `douyin/abogus.py`（兼容导出层）
 - `douyin/models.py`（兼容导出层）
 
 ## 职责
 
-### `crawler.py`
+### `douyin_signature.py`
+
+- 生成 `a_bogus` 签名
+- 作为抖音 Web 请求的底层签名算法实现
+
+### `douyin_web_client.py`
+
+- 构造详情接口参数
+- 携带签名与请求头调用抖音 Web API
+- 解析短链重定向并提取 `aweme_id`
+
+### `video_fetch_service.py`
 
 - 提取抖音短链或完整视频链接
-- 解析短链跳转
-- 提取 `aweme_id`
-- 对详情接口参数做签名
-- 携带 Cookie 请求抖音详情接口
 - 将原始接口数据转换成 `VideoInfo`
+- 组织单视频抓取流程
 
 ### `parser.py`
 

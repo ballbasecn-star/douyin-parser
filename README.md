@@ -200,18 +200,18 @@ douyin-parser/
 ├── main.py                          # CLI 命令行入口
 ├── douyin/                          # 核心模块
 │   ├── __init__.py                  # 包初始化，版本号
-│   ├── crawler.py                   # 本地爬虫（链接解析 + API 签名 + 数据请求）
-│   ├── abogus.py                    # a_bogus 签名算法（SM3 哈希）
+│   ├── crawler.py                   # 兼容导出层（抓取逻辑已迁移到 app/services + app/infra）
+│   ├── abogus.py                    # 兼容导出层（签名算法已迁移到 app/infra）
 │   ├── parser.py                    # 主解析器入口（协调 crawler + transcriber）
 │   ├── models.py                    # 兼容导出层（VideoInfo 已迁移到 app/domain）
 │   ├── transcriber.py               # 视频转录（下载 → ffmpeg → Whisper）
 │   └── cookie_manager.py            # 兼容导出层（Cookie 基础设施已迁移到 app/infra）
 ├── app/                             # 新后端主包
 │   ├── api/                         # Web/API 路由与请求适配
-│   ├── services/                    # 业务流程编排
+│   ├── services/                    # 业务流程编排（含视频抓取服务）
 │   ├── domain/                      # 领域模型（含 VideoInfo）
 │   ├── schemas/                     # 请求结构定义
-│   └── infra/                       # 应用配置、Cookie 与基础设施封装
+│   └── infra/                       # 应用配置、Cookie、签名与抖音请求基础设施
 ├── chrome-cookie-sniffer/           # Chrome 浏览器扩展
 │   ├── manifest.json                # 扩展配置
 │   ├── background.js                # 请求拦截 + Cookie 捕获
@@ -248,8 +248,9 @@ douyin-parser/
 
 | 模块 | 职责 | 依赖 |
 |------|------|------|
-| `crawler.py` | 链接提取、短链接重定向、构造请求参数、a_bogus 签名、直接调用抖音 API、解析响应数据 | `abogus.py`, `app/infra/cookie_store.py` |
-| `abogus.py` | 实现 a_bogus 签名算法（基于 SM3 哈希），生成请求防伪参数 | `gmssl` |
+| `app/services/video_fetch_service.py` | 链接提取、视频数据解析、单视频抓取流程编排 | `app/infra/douyin_web_client.py`, `app/domain` |
+| `app/infra/douyin_web_client.py` | 构造请求参数、a_bogus 签名、调用抖音 Web API | `app/infra/douyin_signature.py`, `requests` |
+| `app/infra/douyin_signature.py` | 实现 a_bogus 签名算法（基于 SM3 哈希），生成请求防伪参数 | `gmssl` |
 | `parser.py` | 顶层解析入口，协调 `crawler` 获取数据和 `transcriber` 转录 | `crawler.py`, `transcriber.py` |
 | `models.py` | `VideoInfo` 的兼容导出层，内部已迁移到 `app/domain` | — |
 | `transcriber.py` | 视频下载 → ffmpeg 提取音频 → faster-whisper/Groq 转录 | `faster-whisper`, `ffmpeg` |

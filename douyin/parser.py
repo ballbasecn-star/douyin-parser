@@ -9,8 +9,7 @@ import os
 from typing import Optional, Callable
 
 from app.domain import VideoInfo
-
-from .crawler import crawl_video, get_video_download_url
+from app.services.video_fetch_service import crawl_video, get_video_download_url
 
 logger = logging.getLogger(__name__)
 

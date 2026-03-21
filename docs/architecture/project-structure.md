@@ -235,10 +235,10 @@ app/
 当前仓库已经完成了第一轮结构化收敛：
 
 - `app/api/` 已承接 Web/API 路由
-- `app/services/` 已承接视频解析与系统服务编排
+- `app/services/` 已承接视频解析编排、系统服务编排和单视频抓取服务
 - `app/domain/` 已承接单视频核心领域模型 `VideoInfo`
 - `app/schemas/` 已承接解析请求结构
-- `app/infra/` 已承接应用基础配置与 Cookie 基础设施
+- `app/infra/` 已承接应用基础配置、Cookie 基础设施、抖音签名与 Web 请求客户端
 - `web/app.py` 现在只负责启动 Flask 服务和 Cookie Webhook
 
 这意味着后续新增能力应继续落在 `app/` 下，而不是再回到 `web/app.py` 堆逻辑。
