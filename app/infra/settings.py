@@ -18,6 +18,10 @@ DATA_DIR = BASE_DIR / "data"
 
 
 def get_database_url() -> str:
-    """返回当前数据库连接串。"""
+    """返回当前数据库连接串。
+
+    当前团队约定 dev/prod 主业务数据库都应使用 PostgreSQL。
+    这里保留 SQLite 回退，仅用于测试或临时无配置启动。
+    """
     default_path = DATA_DIR / "app_dev.sqlite3"
     return os.environ.get("DATABASE_URL", f"sqlite:///{default_path}")

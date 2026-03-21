@@ -63,7 +63,7 @@
 - `COOKIE_DIR`
 - `PORT`
 - `WEBHOOK_PORT`
-- 未来的 PostgreSQL 连接配置
+- `DATABASE_URL`
 
 ### dev 数据目录建议
 
@@ -76,9 +76,17 @@
   exports/
 ```
 
-如果未来接入 PostgreSQL，本地开发应使用独立开发数据库，例如：
+dev 环境数据库建议：
 
-- 数据库名：`douyin_parser_dev`
+- 使用独立 PostgreSQL 开发数据库
+- 数据库名建议：`douyin_parser_dev`
+- 示例连接串：
+  `DATABASE_URL=postgresql+psycopg://douyin_parser:your_password@127.0.0.1:5432/douyin_parser_dev`
+
+补充说明：
+
+- 当前代码仍保留 SQLite 回退能力，便于测试或临时启动
+- 但这不应再作为正式 `dev` 环境标准
 
 ## prod 部署
 
@@ -143,13 +151,9 @@
 - `PORT=8080`
 - `WEBHOOK_PORT=5555`
 
-后续接入 PostgreSQL 后，补充：
-
 - `DATABASE_URL`
 
 ### 生产数据库建议
-
-从博主监控 V1 开始：
 
 - `prod` 应使用正式 PostgreSQL 数据库
 - 建议数据库名示例：`douyin_parser_prod`

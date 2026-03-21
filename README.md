@@ -303,10 +303,23 @@ python main.py cookie show
 在项目根目录创建 `.env` 文件（参照 `.env.example`）：
 
 ```env
-# Groq API Key（使用 --cloud 云端转录时需要）
-# 免费获取: https://console.groq.com/keys
+# 推荐：dev 环境也直接使用 PostgreSQL
+DATABASE_URL=postgresql+psycopg://douyin_parser:your_password@127.0.0.1:5432/douyin_parser_dev
+
+# SiliconFlow：默认云端转录与文案拆解推荐
+SILICONFLOW_API_KEY=sk_xxxxxxxxxxxxxxxx
+
+# Groq：可选云端转录提供方
 GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxx
+
+# 本地 Cookie 目录
+COOKIE_DIR=./cookie_data
 ```
+
+说明：
+
+- 当前代码仍保留 SQLite 回退能力，未配置 `DATABASE_URL` 时会临时落到 `sqlite:///data/app_dev.sqlite3`
+- 但从当前阶段开始，`dev` 与 `prod` 的主业务数据库标准都统一为 PostgreSQL
 
 ## 📦 依赖说明
 

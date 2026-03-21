@@ -81,7 +81,7 @@
 
 建议：
 
-- `dev` 使用独立开发数据库
+- `dev` 使用独立 PostgreSQL 开发数据库
 - `prod` 使用正式生产数据库
 
 禁止开发环境直接连接生产数据库。
@@ -129,6 +129,13 @@ Cookie、导出文件、缓存文件等都必须按环境隔离目录。
 - 独立容器名或 compose 项目名
 
 实现隔离。
+
+当前约定的数据库标准为：
+
+- `dev`: `douyin_parser_dev`（PostgreSQL）
+- `prod`: `douyin_parser_prod`（PostgreSQL）
+
+当前代码仍保留 SQLite 回退能力，用于测试或临时无配置启动；但这不代表 SQLite 仍是 `dev` 的推荐方案。
 
 ## 镜像与版本策略
 
