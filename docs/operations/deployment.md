@@ -135,12 +135,14 @@ dev 环境数据库建议：
 当前仓库中已有：
 
 - `deploy/douyin-parser/compose.yaml`
+- `deploy/douyin-parser/release.env.example`
 - `deploy/nginx/compose.yaml`
 
 它们体现了当前生产部署的基本方向：
 
 - `douyin-parser` 接入 `shared-proxy`
 - `nginx` 作为共享反向代理
+- 业务容器镜像由 `release.env` 注入，而不是手改 compose
 
 ### 生产环境变量建议
 
@@ -209,29 +211,111 @@ dev 环境数据库建议：
 
 推荐镜像 tag：
 
-- `vX.Y.Z`
+- `v<应用版本>-<时间戳>-<git短提交>-amd64`
 
 不建议长期使用：
 
 - `latest` 作为唯一发布依据
+
+推荐将“应用版本”和“发布版本”区分开：
+
+- 应用版本：代码中的语义版本，例如 `1.0.0`
+- 发布版本：一次真实上线对应的版本号，例如 `v1.0.0-20260321-230501-abc1234`
+
+好处：
+
+- 能区分“当前产品版本”和“某次生产发布”
+- 健康检查可以直接回显当前 release
+- 回滚时更容易定位具体镜像
 
 ## 发布步骤
 
 ### 从 dev 到 prod 的建议流程
 
 1. 本地开发与自测
-2. 先构建或更新基础镜像
-3. 本地业务镜像构建
-4. 本地容器验证
-5. 生成固定版本镜像 tag
-6. 将镜像导出或推送到镜像仓库
-7. 在生产环境更新镜像
-8. 重启 `douyin-parser`
-9. 验证：
-   - 容器健康检查
-   - `/api/health`
-   - 域名 HTTPS 路由
-   - 关键页面与关键 API
+2. 运行统一发布脚本 `scripts/deploy_prod.sh`
+3. 脚本自动完成：
+   - 读取应用语义版本
+   - 读取当前 git 短提交
+   - 生成发布版本号
+   - 按需构建基础镜像
+   - 构建 `linux/amd64` 应用镜像
+   - 本地运行容器烟测
+   - 导出镜像 tar
+   - 上传到生产服务器
+   - 更新服务器上的 `release.env`
+   - 执行 `docker compose --env-file release.env up -d`
+   - 做容器健康检查和公网健康检查
+
+### 统一发布脚本
+
+推荐使用：
+
+```bash
+./scripts/deploy_prod.sh
+```
+
+该脚本默认会：
+
+- 使用 `app/version.py` 里的应用版本
+- 使用当前 git 短提交
+- 生成发布版本号：
+  `v<应用版本>-<时间戳>-<git短提交>`
+- 生成应用镜像 tag：
+  `ballbasecn/douyin-parser:<发布版本>-amd64`
+
+常用参数：
+
+```bash
+# 强制重建基础镜像
+./scripts/deploy_prod.sh --rebuild-base
+
+# 在工作区有未提交改动时允许继续发布
+./scripts/deploy_prod.sh --allow-dirty
+
+# 指定发布版本号
+./scripts/deploy_prod.sh --release-version v1.0.0-20260321-abc1234
+
+# 只构建与导出，不上传服务器
+./scripts/deploy_prod.sh --skip-upload
+
+# 仅查看将执行的步骤
+./scripts/deploy_prod.sh --dry-run
+```
+
+### 发布脚本依赖的环境变量
+
+脚本支持以下变量：
+
+- `IMAGE_REPO`
+- `BASE_IMAGE_REPO`
+- `DEPLOY_HOST`
+- `DEPLOY_USER`
+- `DEPLOY_PASSWORD`
+- `DEPLOY_APP_DIR`
+- `PUBLIC_HEALTH_URL`
+
+其中：
+
+- 若配置了 `DEPLOY_PASSWORD`，脚本会使用 `sshpass`
+- 若未配置，则默认使用本机 SSH key 连接服务器
+
+### 服务器侧文件约定
+
+生产目录下建议至少有：
+
+- `.env`
+  - 应用运行配置，例如 `SILICONFLOW_API_KEY`、`DATABASE_URL`
+- `release.env`
+  - 发布元信息，例如当前镜像 tag、当前发布版本号
+- `compose.yaml`
+  - 容器编排模板
+
+说明：
+
+- `.env` 面向应用运行配置
+- `release.env` 面向部署元信息
+- 这两类信息应分开维护，避免将业务密钥和部署版本混在一起
 
 ## 回滚原则
 
@@ -258,6 +342,8 @@ dev 环境数据库建议：
 
 - 环境目录布局变化
 - compose 结构变化
+- 发布脚本行为变化
+- 版本号策略变化
 - nginx 路由变化
 - 配置文件组织方式变化
 - 数据库接入方式变化

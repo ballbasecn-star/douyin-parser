@@ -4,16 +4,20 @@ import os
 from typing import Dict, List
 
 from app.infra.cookie_store import get_cookie_manager
-from app.infra.settings import APP_VERSION
+from app.infra.settings import APP_RELEASE_VERSION, APP_SEMANTIC_VERSION, APP_VERSION
 
 
 def get_health_payload() -> Dict:
     """返回健康检查载荷。"""
-    return {
+    payload = {
         "status": "running",
         "version": APP_VERSION,
+        "app_version": APP_SEMANTIC_VERSION,
         "cookie": get_cookie_manager().get_cookie_info(),
     }
+    if APP_RELEASE_VERSION:
+        payload["release_version"] = APP_RELEASE_VERSION
+    return payload
 
 
 def get_cookie_status_payload() -> Dict:

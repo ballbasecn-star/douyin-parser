@@ -206,6 +206,41 @@ docker build \
 - 真正发生产时，再单独构建 `linux/amd64`
 - 生产构建前，应确保目标环境已经能拉到或预先加载 `ballbasecn/douyin-parser-base:python3.11-bookworm`
 
+## 🚀 统一生产发布
+
+当前项目推荐使用统一发布脚本完成生产部署：
+
+```bash
+./scripts/deploy_prod.sh
+```
+
+这条命令会自动完成：
+
+- 生成发布版本号
+- 构建 `linux/amd64` 生产镜像
+- 本地健康检查
+- 导出镜像 tar
+- 上传服务器
+- 更新 `release.env`
+- 重启生产 compose
+- 验证公网健康检查
+
+发布版本号默认格式：
+
+```text
+v<应用版本>-<时间戳>-<git短提交>
+```
+
+例如：
+
+```text
+v1.0.0-20260321-230501-abc1234
+```
+
+如果你需要查看完整部署约定，请参考：
+
+- `docs/operations/deployment.md`
+
 ### 完整命令参考
 
 ```

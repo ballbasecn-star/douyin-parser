@@ -8,3 +8,5 @@ venv/
 *.log
 deploy.sh
 data/
+release.env
+*.tar

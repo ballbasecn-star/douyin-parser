@@ -1,11 +1,12 @@
 services:
   douyin-parser:
-    image: ballbasecn/douyin-parser:dev-amd64
+    image: ${DOUYIN_PARSER_IMAGE:?DOUYIN_PARSER_IMAGE 未配置}
     container_name: douyin-parser
     restart: unless-stopped
     env_file:
       - .env
     environment:
+      APP_RELEASE_VERSION: ${APP_RELEASE_VERSION:-}
       COOKIE_DIR: /app/cookie_data
       PORT: 8080
       WEBHOOK_PORT: 5555

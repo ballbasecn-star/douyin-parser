@@ -5,7 +5,9 @@ from pathlib import Path
 
 from app.version import __version__
 
-APP_VERSION = __version__
+APP_SEMANTIC_VERSION = __version__
+APP_RELEASE_VERSION = os.environ.get("APP_RELEASE_VERSION", "").strip()
+APP_VERSION = APP_RELEASE_VERSION or APP_SEMANTIC_VERSION
 DEFAULT_AI_MODEL = "Pro/deepseek-ai/DeepSeek-V3.2"
 
 BASE_DIR = Path(__file__).resolve().parents[2]
