@@ -175,6 +175,7 @@ python main.py --cloud "分享文本"
 
 - 基础镜像：固定安装 `ffmpeg`，并切到国内 Debian 源
 - 业务镜像：默认只安装云端转录依赖，不再默认安装 `faster-whisper`
+- `pip` 依赖默认使用清华 PyPI 镜像，无需额外传 `--build-arg`
 
 推荐流程：
 
