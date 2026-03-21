@@ -39,7 +39,8 @@ def setup_logging(verbose: bool = False):
 
 def handle_cookie(args):
     """处理 cookie 子命令"""
-    from douyin.cookie_manager import get_cookie_manager, start_webhook_server
+    from app.infra.cookie_store import get_cookie_manager
+    from app.infra.cookie_webhook import start_webhook_server
 
     cm = get_cookie_manager()
     action = args[0] if args else "show"

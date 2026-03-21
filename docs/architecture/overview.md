@@ -32,16 +32,20 @@
   负责提取音频并进行本地或云端转录
 - `douyin/analyzer.py`
   负责对转录文本做 AI 分析
-- `douyin/cookie_manager.py`
-  负责 Cookie 存储与 Webhook 更新
+- `app/infra/cookie_store.py`
+  负责 Cookie 存储、读取与全局管理器
+- `app/infra/cookie_webhook.py`
+  负责 Cookie Webhook 接收服务
 - `app/api/`
   负责 Flask 路由、请求适配与响应组装
 - `app/services/`
   负责视频解析、系统配置、图片代理等业务服务编排
+- `app/domain/`
+  负责领域模型与核心实体，当前已承接 `VideoInfo`
 - `app/schemas/`
   负责 HTTP 请求结构定义与参数标准化
 - `app/infra/`
-  负责应用级配置、路径与基础设施常量
+  负责应用级配置、路径与基础设施常量，并承接 Cookie 基础设施
 - `web/app.py`
   作为 Web 服务启动入口，负责装配 app 并启动运行
 

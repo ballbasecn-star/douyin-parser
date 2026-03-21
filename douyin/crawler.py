@@ -16,9 +16,10 @@ from urllib.parse import urlencode, quote
 
 import requests
 
+from app.domain import VideoInfo
+from app.infra.cookie_store import get_cookie_manager
+
 from .abogus import ABogus
-from .models import VideoInfo
-from .cookie_manager import get_cookie_manager
 
 logger = logging.getLogger(__name__)
 

@@ -8,7 +8,8 @@ import logging
 import os
 from typing import Optional, Callable
 
-from .models import VideoInfo
+from app.domain import VideoInfo
+
 from .crawler import crawl_video, get_video_download_url
 
 logger = logging.getLogger(__name__)

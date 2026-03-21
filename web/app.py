@@ -8,7 +8,7 @@ Douyin Parser - Web 服务
 import logging
 
 from app import create_app
-from douyin.cookie_manager import start_webhook_background
+from app.infra.cookie_webhook import start_webhook_background
 
 app = create_app()
 logger = logging.getLogger(__name__)

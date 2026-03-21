@@ -10,7 +10,8 @@
 - `douyin/parser.py`
 - `douyin/transcriber.py`
 - `douyin/analyzer.py`
-- `douyin/models.py`
+- `app/domain/video_info.py`
+- `douyin/models.py`（兼容导出层）
 
 ## 职责
 

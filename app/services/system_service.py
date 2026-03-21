@@ -3,8 +3,7 @@
 import os
 from typing import Dict, List
 
-from douyin.cookie_manager import get_cookie_manager
-
+from app.infra.cookie_store import get_cookie_manager
 from app.infra.settings import APP_VERSION
 
 
