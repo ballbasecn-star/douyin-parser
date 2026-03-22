@@ -16,6 +16,8 @@ DEPLOY_USER="${DEPLOY_USER:-root}"
 DEPLOY_APP_DIR="${DEPLOY_APP_DIR:-/root/apps/douyin-parser}"
 PUBLIC_HEALTH_URL="${PUBLIC_HEALTH_URL:-https://parser.ballbase.cloud/api/health}"
 LOCAL_HEALTH_PORT="${LOCAL_HEALTH_PORT:-28080}"
+COMPOSE_TEMPLATE_PATH="${COMPOSE_TEMPLATE_PATH:-$ROOT_DIR/deploy/douyin-parser/compose.yaml}"
+REMOTE_COMPOSE_PATH="${DEPLOY_APP_DIR}/compose.yaml"
 
 ALLOW_DIRTY=0
 DRY_RUN=0
@@ -44,6 +46,7 @@ usage() {
   DEPLOY_PASSWORD            可选；若设置则使用 sshpass
   DEPLOY_APP_DIR             生产应用目录
   PUBLIC_HEALTH_URL          部署后公网健康检查地址
+  COMPOSE_TEMPLATE_PATH      本地 compose 模板路径
 EOF
 }
 
@@ -132,6 +135,8 @@ TAR_PATH="/tmp/douyin-parser-${RELEASE_VERSION}-${ARCH_SUFFIX}.tar"
 REMOTE_TAR_PATH="${DEPLOY_APP_DIR}/$(basename "$TAR_PATH")"
 RELEASE_ENV_PATH="${DEPLOY_APP_DIR}/release.env"
 
+[[ -f "$COMPOSE_TEMPLATE_PATH" ]] || die "找不到 compose 模板: ${COMPOSE_TEMPLATE_PATH}"
+
 if [[ "$ALLOW_DIRTY" -ne 1 ]]; then
   STATUS_OUTPUT="$(git -C "$ROOT_DIR" status --porcelain)"
   if [[ -n "$STATUS_OUTPUT" ]]; then
@@ -206,6 +211,7 @@ fi
 log "上传镜像到服务器"
 run_cmd "${SSH_BASE[@]}" "mkdir -p '${DEPLOY_APP_DIR}'"
 run_cmd "${SCP_BASE[@]}" "$TAR_PATH" "${SSH_TARGET}:${REMOTE_TAR_PATH}"
+run_cmd "${SCP_BASE[@]}" "$COMPOSE_TEMPLATE_PATH" "${SSH_TARGET}:${REMOTE_COMPOSE_PATH}.new"
 
 RELEASE_ENV_CONTENT=$(cat <<EOF
 DOUYIN_PARSER_IMAGE=${APP_IMAGE}
@@ -216,6 +222,10 @@ EOF
 REMOTE_SCRIPT=$(cat <<EOF
 set -euo pipefail
 cd '${DEPLOY_APP_DIR}'
+if [ -f compose.yaml ]; then
+  cp compose.yaml "compose.yaml.bak-\$(date +%Y%m%d-%H%M%S)"
+fi
+mv '${REMOTE_COMPOSE_PATH}.new' '${REMOTE_COMPOSE_PATH}'
 if [ -f release.env ]; then
   cp release.env "release.env.bak-\$(date +%Y%m%d-%H%M%S)"
 fi
@@ -226,6 +236,10 @@ docker load -i '${REMOTE_TAR_PATH}'
 docker compose --env-file release.env up -d
 sleep 8
 docker inspect -f '{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{end}}' douyin-parser
+echo '--- compose image ---'
+sed -n '1,40p' '${REMOTE_COMPOSE_PATH}'
+echo '--- release env ---'
+sed -n '1,20p' '${RELEASE_ENV_PATH}'
 EOF
 )
 
