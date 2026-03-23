@@ -11,11 +11,8 @@ services:
       - ./ssl:/etc/nginx/ssl:ro
       - ./www:/var/www/html:ro
     networks:
-      - shared-proxy
-      - linker
+      - content-shared
 
 networks:
-  shared-proxy:
-    external: true
-  linker:
+  content-shared:
     external: true

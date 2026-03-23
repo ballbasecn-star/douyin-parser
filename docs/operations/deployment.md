@@ -140,7 +140,7 @@ dev 环境数据库建议：
 
 它们体现了当前生产部署的基本方向：
 
-- `douyin-parser` 接入 `shared-proxy`
+- `douyin-parser` 接入 `content-shared`
 - `nginx` 作为共享反向代理
 - 业务容器镜像由 `release.env` 注入，而不是手改 compose
 

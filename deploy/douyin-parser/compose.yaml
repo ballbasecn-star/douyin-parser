@@ -13,7 +13,7 @@ services:
     volumes:
       - ./data/cookie_data:/app/cookie_data
     networks:
-      - shared-proxy
+      - content-shared
     healthcheck:
       test:
         - CMD
@@ -26,5 +26,5 @@ services:
       start_period: 20s
 
 networks:
-  shared-proxy:
+  content-shared:
     external: true
