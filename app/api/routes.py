@@ -1,11 +1,8 @@
 """Web 页面与 HTTP API 路由。"""
 
-import json
 import logging
-import queue
-import threading
 
-from flask import Blueprint, Response, jsonify, render_template, request, stream_with_context
+from flask import Blueprint, Response, jsonify, render_template, request
 
 from app.schemas.creator_monitor import (
     parse_creator_create_request,
@@ -23,13 +20,11 @@ from app.api.parser_contract import (
     to_parsed_content_payload,
     UnsupportedUrlError,
 )
-from app.schemas.video_parse import parse_video_request
 from app.services.creator_service import create_creator, get_creator_detail, list_creators, update_creator
 from app.services.creator_sync_service import list_creator_videos, sync_creator_videos
 from app.services.image_proxy_service import fetch_proxy_image
 from app.services.system_service import (
     get_cookie_status_payload,
-    get_health_payload,
     save_cookie_value,
     save_runtime_keys,
 )
@@ -61,12 +56,6 @@ def error_response(code: str, message: str, status_code: int):
 def index():
     """主页。"""
     return render_template("index.html")
-
-
-@api_blueprint.route("/api/health")
-def health():
-    """服务状态与 Cookie 状态。"""
-    return jsonify(get_health_payload())
 
 
 @api_blueprint.route("/api/v1/health")
@@ -113,67 +102,6 @@ def parser_parse():
     except Exception as exc:  # pragma: no cover - 兜底日志分支
         logger.error("统一 parser 解析错误: %s", exc, exc_info=True)
         return contract_error_response(request_id, "INTERNAL_ERROR", str(exc), 500, retryable=True)
-
-
-@api_blueprint.route("/api/parse", methods=["POST"])
-def api_parse():
-    """解析抖音视频并通过 SSE 返回进度。"""
-    try:
-        parse_request = parse_video_request(request.get_json(silent=True))
-    except ValueError as exc:
-        return jsonify({"error": str(exc)}), 400
-
-    def generate():
-        event_queue: queue.Queue = queue.Queue()
-
-        def progress_callback(info):
-            event_queue.put(info)
-
-        def worker():
-            try:
-                result = run_video_parse(parse_request, progress_callback=progress_callback)
-                if result:
-                    event_queue.put({"type": "finish", "success": True})
-                else:
-                    event_queue.put(
-                        {
-                            "type": "finish",
-                            "success": False,
-                            "error": "解析失败，请检查链接是否有效",
-                        }
-                    )
-            except Exception as exc:  # pragma: no cover - 兜底日志分支
-                logger.error("API 解析错误: %s", exc)
-                event_queue.put({"type": "finish", "success": False, "error": str(exc)})
-
-        threading.Thread(target=worker, daemon=True).start()
-
-        while True:
-            item = event_queue.get()
-            yield f"data: {json.dumps(item, ensure_ascii=False)}\n\n"
-            if item["type"] == "finish":
-                break
-
-    return Response(stream_with_context(generate()), mimetype="text/event-stream")
-
-
-@api_blueprint.route("/api/parse-sync", methods=["POST"])
-def api_parse_sync():
-    """同步解析抖音视频，直接返回结构化 JSON。"""
-    try:
-        parse_request = parse_video_request(request.get_json(silent=True))
-    except ValueError as exc:
-        return error_response("BAD_REQUEST", str(exc), 400)
-
-    try:
-        result = run_video_parse(parse_request)
-        if not result:
-            return error_response("PARSE_FAILED", "解析失败，请检查链接是否有效或 Cookie 是否可用", 422)
-
-        return success_response(result.to_dict())
-    except Exception as exc:  # pragma: no cover - 兜底日志分支
-        logger.error("API 同步解析错误: %s", exc, exc_info=True)
-        return error_response("INTERNAL_ERROR", str(exc), 500)
 
 
 @api_blueprint.route("/api/cookie/status")

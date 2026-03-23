@@ -14,7 +14,7 @@ BASE_IMAGE="${BASE_IMAGE_REPO}:${BASE_IMAGE_VERSION}"
 DEPLOY_HOST="${DEPLOY_HOST:-117.72.207.52}"
 DEPLOY_USER="${DEPLOY_USER:-root}"
 DEPLOY_APP_DIR="${DEPLOY_APP_DIR:-/root/apps/douyin-parser}"
-PUBLIC_HEALTH_URL="${PUBLIC_HEALTH_URL:-https://parser.ballbase.cloud/api/health}"
+PUBLIC_HEALTH_URL="${PUBLIC_HEALTH_URL:-https://parser.ballbase.cloud/api/v1/health}"
 LOCAL_HEALTH_PORT="${LOCAL_HEALTH_PORT:-28080}"
 COMPOSE_TEMPLATE_PATH="${COMPOSE_TEMPLATE_PATH:-$ROOT_DIR/deploy/douyin-parser/compose.yaml}"
 REMOTE_COMPOSE_PATH="${DEPLOY_APP_DIR}/compose.yaml"
@@ -180,12 +180,12 @@ else
   CONTAINER_ID="$(docker run --rm -d --platform "$PLATFORM" --name "$SMOKE_CONTAINER" -p "${LOCAL_HEALTH_PORT}:8080" "$APP_IMAGE")"
   trap 'docker stop "$SMOKE_CONTAINER" >/dev/null 2>&1 || true' EXIT
   for _ in {1..20}; do
-    if curl -fsS "http://127.0.0.1:${LOCAL_HEALTH_PORT}/api/health" >/dev/null; then
+    if curl -fsS "http://127.0.0.1:${LOCAL_HEALTH_PORT}/api/v1/health" >/dev/null; then
       break
     fi
     sleep 2
   done
-  curl -fsS "http://127.0.0.1:${LOCAL_HEALTH_PORT}/api/health"
+  curl -fsS "http://127.0.0.1:${LOCAL_HEALTH_PORT}/api/v1/health"
   echo
   docker stop "$CONTAINER_ID" >/dev/null 2>&1 || true
   trap - EXIT

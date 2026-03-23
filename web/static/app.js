@@ -112,7 +112,6 @@ async function parseVideo() {
     const btnText = btn.querySelector('.parse-btn-text');
     const btnLoader = btn.querySelector('.parse-btn-loader');
 
-    // UI: loading
     btn.disabled = true;
     btnText.style.display = 'none';
     btnLoader.style.display = 'flex';
@@ -121,7 +120,6 @@ async function parseVideo() {
     document.getElementById('errorCard').style.display = 'none';
     currentData = null;
 
-    // 开启终端和骨架屏初始状态
     const terminal = document.getElementById('terminalContainer');
     terminal.style.display = 'block';
     clearLog();
@@ -136,63 +134,47 @@ async function parseVideo() {
     document.getElementById('analysisActions').style.display = 'none';
 
     const enableTranscript = transcriptMode !== 'off';
-    const useCloud = transcriptMode === 'groq' || transcriptMode === 'siliconflow';
-    const cloudProvider = useCloud ? transcriptMode : 'groq';
-    const model = document.getElementById('modelSelect').value;
-    const aiModel = document.getElementById('aiModelInput') ? document.getElementById('aiModelInput').value : "Pro/deepseek-ai/DeepSeek-V3.2";
+    const enableAnalysis = document.getElementById('analyzeToggle').checked && enableTranscript;
 
-    appendLog('系统初始化，准备发送解析请求...', 'info');
+    appendLog('系统初始化，准备发送统一契约解析请求...', 'info');
 
     try {
         const payload = {
-            url,
-            transcript: enableTranscript,
-            analyze: document.getElementById('analyzeToggle').checked && enableTranscript,
-            cloud: useCloud,
-            cloud_provider: cloudProvider,
-            model,
-            ai_model: aiModel
+            requestId: `req_${Date.now()}`,
+            input: {
+                sourceText: url,
+                sourceUrl: url.includes('http') ? url : '',
+                platformHint: 'douyin'
+            },
+            options: {
+                fetchTranscript: enableTranscript,
+                fetchMedia: true,
+                fetchMetrics: true,
+                deepAnalysis: enableAnalysis,
+                languageHint: 'zh-CN'
+            }
         };
 
-        const res = await fetch('/api/parse', {
+        const parsed = await requestApi('/api/v1/parse', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         });
 
-        if (!res.body) throw new Error("ReadableStream 缺失，无法处理流");
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder('utf-8');
-        let buffer = '';
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-
-            let boundary = buffer.indexOf('\n\n');
-            while (boundary !== -1) {
-                const chunk = buffer.slice(0, boundary);
-                buffer = buffer.slice(boundary + 2);
-
-                if (chunk.startsWith('data: ')) {
-                    const dataStr = chunk.slice(6);
-                    try {
-                        const packet = JSON.parse(dataStr);
-                        handleSSEPacket(packet, enableTranscript, document.getElementById('analyzeToggle').checked && enableTranscript);
-                    } catch (e) {
-                        console.error('SSE JSON 解析错误:', e, dataStr);
-                    }
-                }
-                boundary = buffer.indexOf('\n\n');
-            }
-        }
-
+        appendLog('✅ 已收到统一契约解析结果', 'success');
+        currentData = mapParsedContentToDouyinViewModel(parsed);
+        renderVideoResult(currentData, {
+            showTranscript: Boolean(currentData.transcript),
+            showAnalysis: Boolean(currentData.analysis),
+            scroll: true,
+        });
+        addToHistory(currentData);
+        showToast('解析完成 ✅');
     } catch (e) {
         showError(`请求失败: ${e.message}`);
         appendLog(`❌ 请求异常坠机: ${e.message}`, 'error');
+        document.getElementById('transcriptSkeleton').style.display = 'none';
+        document.getElementById('analysisSkeleton').style.display = 'none';
     } finally {
         btn.disabled = false;
         btnText.style.display = 'inline';
@@ -207,54 +189,6 @@ async function requestApi(url, options = {}) {
         throw new Error(body?.error?.message || body?.error || `请求失败 (${response.status})`);
     }
     return body && Object.prototype.hasOwnProperty.call(body, 'data') ? body.data : body;
-}
-
-// 处理来自后端的 SSE 数据包
-function handleSSEPacket(packet, expectTranscript, expectAnalysis) {
-    if (packet.type === 'log') {
-        const msg = packet.message;
-        let type = 'info';
-        if (msg.includes('❌') || msg.includes('失败')) type = 'error';
-        if (msg.includes('⚠️')) type = 'warning';
-        if (msg.includes('✅') || msg.includes('🎉')) type = 'success';
-        appendLog(msg, type);
-    }
-    else if (packet.type === 'data') {
-        currentData = Object.assign(currentData || {}, packet.data);
-
-        if (packet.step === 'video_info') {
-            document.getElementById('resultSection').style.display = 'block';
-            renderBaseInfo(currentData);
-
-            if (expectTranscript) document.getElementById('transcriptBlock').style.display = 'block';
-            if (expectAnalysis) document.getElementById('analysisBlock').style.display = 'block';
-        }
-        else if (packet.step === 'transcript') {
-            document.getElementById('transcriptSkeleton').style.display = 'none';
-            document.getElementById('transcriptBody').style.display = 'block';
-            document.getElementById('transcriptActions').style.display = 'flex';
-            renderTranscript(currentData);
-        }
-        else if (packet.step === 'analysis') {
-            document.getElementById('analysisSkeleton').style.display = 'none';
-            document.getElementById('analysisBody').style.display = 'flex';
-            document.getElementById('analysisActions').style.display = 'flex';
-            renderAnalysis(currentData);
-        }
-    }
-    else if (packet.type === 'finish') {
-        if (packet.success) {
-            addToHistory(currentData);
-            showToast('流程圆满完成 ✅');
-            appendLog('🎉 任务全部完成。', 'success');
-        } else {
-            showError(packet.error || '解析失败');
-            appendLog(`❌ 流程被中断: ${packet.error}`, 'error');
-            // Hide skeletons if failed
-            document.getElementById('transcriptSkeleton').style.display = 'none';
-            document.getElementById('analysisSkeleton').style.display = 'none';
-        }
-    }
 }
 
 // ==================== Sub Renderers ====================
@@ -421,6 +355,33 @@ function formatDateTime(value) {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
     return date.toLocaleString('zh-CN', { hour12: false });
+}
+
+function mapParsedContentToDouyinViewModel(parsed) {
+    const cover = (parsed.media?.covers || [])[0] || null;
+    const video = (parsed.media?.videos || [])[0] || null;
+    const publishedAt = parsed.publishedAt || '';
+    const rawPayload = parsed.rawPayload || {};
+    return {
+        video_id: parsed.externalId || '',
+        title: parsed.title || '',
+        description: parsed.summary || parsed.content?.rawText || '',
+        author: parsed.author?.name || '',
+        author_id: parsed.author?.handle || parsed.author?.externalAuthorId || '',
+        author_avatar: parsed.author?.avatarUrl || '',
+        cover_url: cover?.url || '',
+        video_url: video?.url || '',
+        share_url: parsed.canonicalUrl || '',
+        duration_formatted: formatDurationMs(video?.durationMs || 0),
+        create_time_formatted: formatDateTime(publishedAt),
+        like_count: parsed.metrics?.likes || 0,
+        comment_count: parsed.metrics?.comments || 0,
+        share_count: parsed.metrics?.shares || 0,
+        collect_count: parsed.metrics?.favorites || 0,
+        hashtags: parsed.tags || [],
+        transcript: parsed.content?.transcript || '',
+        analysis: rawPayload.analysis || {},
+    };
 }
 
 function formatDurationMs(ms) {

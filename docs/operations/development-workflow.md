@@ -80,7 +80,7 @@
 
 适合单独成 commit 的例子：
 
-- 新增 `/api/parse-sync`
+- 新增 `/api/v1/parse`
 - 新增博主监控 V1 PD
 - 引入 PostgreSQL 相关建模
 - 修复主页链接解析 bug

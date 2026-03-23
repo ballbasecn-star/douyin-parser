@@ -2,7 +2,7 @@
 """
 Douyin Parser 云端客户端
 
-面向 skill / agent 的薄客户端，封装 /api/parse-sync 调用。
+面向 skill / agent 的薄客户端，封装统一 parser 契约调用。
 
 示例:
     python scripts/douyin_parser_client.py parse "https://www.douyin.com/video/123"
@@ -70,7 +70,7 @@ def request_json(method: str, url: str, headers: Dict[str, str], timeout: int, p
 def command_health(args: argparse.Namespace) -> int:
     result = request_json(
         method="GET",
-        url=build_url(args.base_url, "/api/health"),
+        url=build_url(args.base_url, "/api/v1/health"),
         headers=build_headers(args.token),
         timeout=args.timeout,
     )
@@ -80,23 +80,24 @@ def command_health(args: argparse.Namespace) -> int:
 
 def command_parse(args: argparse.Namespace) -> int:
     payload = {
-        "url": args.input_text,
-        "transcript": args.transcript,
-        "analyze": args.analyze,
-        "cloud": args.cloud,
-        "cloud_provider": args.cloud_provider,
-        "model": args.model,
-        "ai_model": args.ai_model,
+        "requestId": f"req_cli_{os.getpid()}",
+        "input": {
+            "sourceText": args.input_text,
+            "sourceUrl": args.input_text if "http" in args.input_text else "",
+            "platformHint": "douyin",
+        },
+        "options": {
+            "fetchTranscript": args.transcript,
+            "fetchMedia": True,
+            "fetchMetrics": True,
+            "deepAnalysis": args.analyze and args.transcript,
+            "languageHint": "zh-CN",
+        },
     }
-
-    if args.groq_api_key:
-        payload["groq_api_key"] = args.groq_api_key
-    if args.siliconflow_api_key:
-        payload["siliconflow_api_key"] = args.siliconflow_api_key
 
     result = request_json(
         method="POST",
-        url=build_url(args.base_url, "/api/parse-sync"),
+        url=build_url(args.base_url, "/api/v1/parse"),
         headers=build_headers(args.token),
         payload=payload,
         timeout=args.timeout,
@@ -121,7 +122,7 @@ def build_parser() -> argparse.ArgumentParser:
     health_parser = subparsers.add_parser("health", help="检查服务状态")
     health_parser.set_defaults(func=command_health)
 
-    parse_parser = subparsers.add_parser("parse", help="调用 /api/parse-sync 解析视频")
+    parse_parser = subparsers.add_parser("parse", help="调用 /api/v1/parse 解析视频")
     parse_parser.add_argument("input_text", help="抖音分享文本或链接")
     parse_parser.add_argument("--transcript", action="store_true", help="启用语音转录")
     parse_parser.add_argument("--analyze", action="store_true", help="启用 AI 爆款分析")
