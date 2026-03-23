@@ -41,6 +41,101 @@ class WebApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["status"], "running")
 
+    def test_parser_health_returns_contract_envelope(self):
+        response = self.client.get("/api/v1/health")
+
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["data"]["status"], "UP")
+        self.assertIsNone(body["error"])
+        self.assertIn("requestId", body["meta"])
+        self.assertIn("parserVersion", body["meta"])
+
+    def test_parser_capabilities_returns_contract_payload(self):
+        response = self.client.get("/api/v1/capabilities")
+
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["data"]["platform"], "douyin")
+        self.assertIn("video", body["data"]["supportedSourceTypes"])
+        self.assertTrue(body["data"]["features"]["transcript"])
+
+    @patch("app.api.routes.run_video_parse")
+    @patch("app.api.routes.parse_contract_request")
+    @patch("app.api.routes.to_parsed_content_payload")
+    def test_parser_parse_returns_contract_payload(
+        self,
+        mock_to_parsed_content_payload,
+        mock_parse_contract_request,
+        mock_run_video_parse,
+    ):
+        mock_parse_contract_request.return_value = ParseRequest(
+            url="https://www.douyin.com/video/123",
+            enable_transcript=True,
+            enable_analysis=True,
+            use_cloud=False,
+            cloud_provider="groq",
+            model_size="small",
+            ai_model="Pro/deepseek-ai/DeepSeek-V3.2",
+            cloud_api_key=None,
+        )
+        mock_run_video_parse.return_value = Mock()
+        mock_to_parsed_content_payload.return_value = {
+            "platform": "douyin",
+            "sourceType": "video",
+            "externalId": "123",
+            "canonicalUrl": "https://www.douyin.com/video/123",
+            "title": "测试视频",
+            "summary": None,
+            "author": {
+                "externalAuthorId": "author-1",
+                "name": "测试作者",
+                "handle": "author-1",
+                "profileUrl": None,
+                "avatarUrl": None,
+            },
+            "publishedAt": None,
+            "language": "zh-CN",
+            "content": {"rawText": "测试视频", "transcript": None, "segments": []},
+            "metrics": {"views": 0, "likes": 0, "comments": 0, "shares": 0, "favorites": 0},
+            "tags": [],
+            "media": {"covers": [], "images": [], "videos": [], "audios": []},
+            "rawPayload": {},
+            "warnings": [],
+        }
+
+        response = self.client.post(
+            "/api/v1/parse",
+            json={
+                "requestId": "req_test_parse",
+                "input": {"sourceUrl": "https://www.douyin.com/video/123", "platformHint": "douyin"},
+                "options": {"languageHint": "zh-CN"},
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["data"]["externalId"], "123")
+        self.assertEqual(body["meta"]["requestId"], "req_test_parse")
+
+    def test_parser_parse_rejects_unsupported_url(self):
+        response = self.client.post(
+            "/api/v1/parse",
+            json={
+                "requestId": "req_bad_url",
+                "input": {"sourceUrl": "https://example.com/not-douyin", "platformHint": "douyin"},
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        body = response.get_json()
+        self.assertFalse(body["success"])
+        self.assertEqual(body["error"]["code"], "UNSUPPORTED_URL")
+        self.assertEqual(body["meta"]["requestId"], "req_bad_url")
+
     @patch("app.api.routes.run_video_parse")
     @patch("app.api.routes.parse_video_request")
     def test_parse_sync_returns_video_data(self, mock_parse_video_request, mock_run_video_parse):

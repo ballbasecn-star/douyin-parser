@@ -13,6 +13,16 @@ from app.schemas.creator_monitor import (
     parse_creator_update_request,
     parse_stored_video_analyze_request,
 )
+from app.api.parser_contract import (
+    build_capabilities_payload,
+    build_health_payload as build_contract_health_payload,
+    contract_error_response,
+    contract_success_response,
+    create_request_id,
+    parse_contract_request,
+    to_parsed_content_payload,
+    UnsupportedUrlError,
+)
 from app.schemas.video_parse import parse_video_request
 from app.services.creator_service import create_creator, get_creator_detail, list_creators, update_creator
 from app.services.creator_sync_service import list_creator_videos, sync_creator_videos
@@ -57,6 +67,52 @@ def index():
 def health():
     """服务状态与 Cookie 状态。"""
     return jsonify(get_health_payload())
+
+
+@api_blueprint.route("/api/v1/health")
+def parser_health():
+    """统一 parser 健康检查。"""
+    return contract_success_response(create_request_id(), build_contract_health_payload())
+
+
+@api_blueprint.route("/api/v1/capabilities")
+def parser_capabilities():
+    """统一 parser 能力声明。"""
+    return contract_success_response(create_request_id(), build_capabilities_payload())
+
+
+@api_blueprint.route("/api/v1/parse", methods=["POST"])
+def parser_parse():
+    """统一 parser 解析入口。"""
+    request_body = request.get_json(silent=True)
+    request_id = ((request_body or {}).get("requestId") or "").strip() or create_request_id()
+
+    try:
+        parse_request = parse_contract_request(request_body)
+    except UnsupportedUrlError as exc:
+        return contract_error_response(request_id, "UNSUPPORTED_URL", str(exc), 400, retryable=False)
+    except ValueError as exc:
+        return contract_error_response(request_id, "INVALID_INPUT", str(exc), 400, retryable=False)
+
+    try:
+        result = run_video_parse(parse_request)
+        if not result:
+            return contract_error_response(
+                request_id,
+                "UPSTREAM_CHANGED",
+                "解析失败，请检查链接是否有效或 Cookie 是否可用",
+                422,
+                retryable=True,
+            )
+
+        payload = to_parsed_content_payload(
+            result,
+            ((request_body or {}).get("options") or {}).get("languageHint"),
+        )
+        return contract_success_response(request_id, payload)
+    except Exception as exc:  # pragma: no cover - 兜底日志分支
+        logger.error("统一 parser 解析错误: %s", exc, exc_info=True)
+        return contract_error_response(request_id, "INTERNAL_ERROR", str(exc), 500, retryable=True)
 
 
 @api_blueprint.route("/api/parse", methods=["POST"])
