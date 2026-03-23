@@ -14,3 +14,4 @@ release.env
 /.idea/dataSources.xml
 
 deploy/douyin-parser/.release.local.env
+deploy/douyin-parser/.env.prod
