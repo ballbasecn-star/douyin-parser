@@ -442,3 +442,27 @@ DEPLOY_ENV_FILE=deploy/douyin-parser/.env.prod \
 IMAGE_TAG=<旧版本号> \
 ./scripts/deploy-prebuilt-release.sh
 ```
+
+## 一键发布
+
+如果不想每次手动传部署变量，先在本机准备一次发布配置：
+
+```bash
+cd /Users/apple/Workspace/linker-platform/parsers/douyin-parser/deploy/douyin-parser
+cp .release.local.env.example .release.local.env
+```
+
+之后日常发布直接执行：
+
+```bash
+cd /Users/apple/Workspace/linker-platform/parsers/douyin-parser
+./scripts/release-prod.sh
+```
+
+常用参数：
+
+- `--image-tag <版本号>`
+- `--skip-build`
+- `--skip-export`
+- `--skip-deploy`
+- `--dry-run`

@@ -12,3 +12,5 @@ release.env
 *.tar
 .tmp/
 /.idea/dataSources.xml
+
+deploy/douyin-parser/.release.local.env
