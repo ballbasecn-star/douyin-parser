@@ -477,3 +477,19 @@ print(result.transcript)
 - [Douyin_TikTok_Download_API](https://github.com/Evil0ctal/Douyin_TikTok_Download_API) — 项目灵感和 Cookie Sniffer
 - [faster-whisper](https://github.com/SYSTRAN/faster-whisper) — 高性能语音转文字
 - [Groq](https://groq.com/) — 超快云端推理 API
+
+## 发布入口
+
+如果需要手动发布，优先看：
+
+- `docs/operations/deployment.md`
+
+当前仓库推荐优先使用三段式发布：
+
+1. `scripts/build-release-image.sh`
+2. `scripts/export-release-bundle.sh`
+3. `scripts/deploy-prebuilt-release.sh`
+
+如果需要一条命令全自动发布，再使用：
+
+- `scripts/deploy_prod.sh`

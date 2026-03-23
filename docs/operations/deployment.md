@@ -351,3 +351,94 @@ dev 环境数据库建议：
 - 配置文件组织方式变化
 - 数据库接入方式变化
 - 发布流程变化
+
+## 手动发布到生产环境
+
+当前仓库同时保留两套发布方式：
+
+- 统一旧脚本：`scripts/deploy_prod.sh`
+- 三段式发布脚本：
+  - `scripts/build-release-image.sh`
+  - `scripts/export-release-bundle.sh`
+  - `scripts/deploy-prebuilt-release.sh`
+
+如果需要手动控制镜像构建、导出和上线过程，优先使用三段式脚本。
+
+### 1. 准备生产环境文件
+
+```bash
+cd /Users/apple/Workspace/linker-platform/parsers/douyin-parser/deploy/douyin-parser
+cp .env.prod.example .env.prod
+```
+
+至少确认：
+
+- `PORT`
+- `WEBHOOK_PORT`
+- `SILICONFLOW_API_KEY` 或 `GROQ_API_KEY`
+- `COOKIE_DIR`
+- 其他你当前生产环境必须依赖的 Cookie 和数据库配置
+
+### 2. 本地构建镜像
+
+```bash
+cd /Users/apple/Workspace/linker-platform/parsers/douyin-parser
+IMAGE_TAG=20260323-<git短提交> ./scripts/build-release-image.sh
+```
+
+默认镜像名：`ballbasecn/douyin-parser`
+
+### 3. 导出镜像 bundle
+
+```bash
+cd /Users/apple/Workspace/linker-platform/parsers/douyin-parser
+IMAGE_TAG=20260323-<git短提交> ./scripts/export-release-bundle.sh
+```
+
+导出结果默认在：
+
+```text
+.tmp/release/<IMAGE_TAG>/
+```
+
+### 4. 上传服务器并更新
+
+```bash
+cd /Users/apple/Workspace/linker-platform/parsers/douyin-parser
+DEPLOY_HOST=117.72.207.52 \
+DEPLOY_USER=root \
+DEPLOY_PASSWORD='服务器密码' \
+DEPLOY_ENV_FILE=deploy/douyin-parser/.env.prod \
+IMAGE_TAG=20260323-<git短提交> \
+./scripts/deploy-prebuilt-release.sh
+```
+
+默认服务器目录：
+
+```text
+/root/apps/parsers/douyin-parser
+```
+
+### 5. 发布后验证
+
+```bash
+curl -sS http://127.0.0.1:8080/api/v1/health
+curl -sS http://127.0.0.1:8080/api/v1/capabilities
+```
+
+公网验证：
+
+```bash
+curl -sS https://parser.ballbase.cloud/api/v1/health
+```
+
+### 6. 回滚
+
+```bash
+DEPLOY_HOST=117.72.207.52 \
+DEPLOY_USER=root \
+DEPLOY_PASSWORD='服务器密码' \
+DEPLOY_ENV_FILE=deploy/douyin-parser/.env.prod \
+IMAGE_TAG=<旧版本号> \
+./scripts/deploy-prebuilt-release.sh
+```
