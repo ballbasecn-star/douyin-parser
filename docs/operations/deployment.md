@@ -300,6 +300,7 @@ dev 环境数据库建议：
 
 - 若配置了 `DEPLOY_PASSWORD`，脚本会使用 `sshpass`
 - 若未配置，则默认使用本机 SSH key 连接服务器
+- 当前生产默认目录为 `/root/apps/parsers/douyin-parser`
 
 ### 服务器侧文件约定
 

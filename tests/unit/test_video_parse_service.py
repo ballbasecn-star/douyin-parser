@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch
 
+from app.api.parser_contract import parse_contract_request
 from app.schemas.video_parse import ParseRequest, parse_video_request
 from app.services.video_parse_service import run_video_parse
 
@@ -32,6 +33,28 @@ class ParseVideoRequestTests(unittest.TestCase):
     def test_parse_video_request_requires_url(self):
         with self.assertRaisesRegex(ValueError, "请输入抖音链接"):
             parse_video_request({"url": "   "})
+
+    def test_contract_request_defaults_to_siliconflow_cloud_transcript(self):
+        request = parse_contract_request(
+            {
+                "requestId": "req_contract",
+                "input": {
+                    "sourceUrl": "https://www.douyin.com/video/123",
+                    "platformHint": "douyin",
+                },
+                "options": {
+                    "fetchTranscript": True,
+                    "deepAnalysis": False,
+                },
+            },
+            environ={"SILICONFLOW_API_KEY": "sf-key"},
+        )
+
+        self.assertEqual(request.url, "https://www.douyin.com/video/123")
+        self.assertTrue(request.enable_transcript)
+        self.assertTrue(request.use_cloud)
+        self.assertEqual(request.cloud_provider, "siliconflow")
+        self.assertEqual(request.cloud_api_key, "sf-key")
 
 
 class VideoParseServiceTests(unittest.TestCase):

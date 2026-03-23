@@ -115,13 +115,13 @@ def parse_contract_request(data: Optional[dict], environ: Optional[Mapping[str, 
 
     from app.schemas.video_parse import parse_video_request
 
-    # 显式把统一契约请求映射回既有解析核心，避免上层依赖旧字段命名。
+    # 线上主系统统一走云端转录，避免生产环境误落到本地转录链路。
     legacy_request = {
         "url": resolved_source,
         "transcript": enable_transcript,
         "analyze": deep_analysis and enable_transcript,
-        "cloud": False,
-        "cloud_provider": "groq",
+        "cloud": enable_transcript,
+        "cloud_provider": "siliconflow",
         "model": "small",
     }
     return parse_video_request(legacy_request, environ=environ)

@@ -13,7 +13,7 @@ BASE_IMAGE="${BASE_IMAGE_REPO}:${BASE_IMAGE_VERSION}"
 
 DEPLOY_HOST="${DEPLOY_HOST:-117.72.207.52}"
 DEPLOY_USER="${DEPLOY_USER:-root}"
-DEPLOY_APP_DIR="${DEPLOY_APP_DIR:-/root/apps/douyin-parser}"
+DEPLOY_APP_DIR="${DEPLOY_APP_DIR:-/root/apps/parsers/douyin-parser}"
 PUBLIC_HEALTH_URL="${PUBLIC_HEALTH_URL:-https://parser.ballbase.cloud/api/v1/health}"
 LOCAL_HEALTH_PORT="${LOCAL_HEALTH_PORT:-28080}"
 COMPOSE_TEMPLATE_PATH="${COMPOSE_TEMPLATE_PATH:-$ROOT_DIR/deploy/douyin-parser/compose.yaml}"
