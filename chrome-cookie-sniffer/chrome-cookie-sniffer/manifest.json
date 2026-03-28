@@ -11,7 +11,8 @@
     ],
     "host_permissions": [
       "https://*.douyin.com/*",
-      "https://douyin.com/*"
+      "https://douyin.com/*",
+      "https://linker.ballbase.cloud/*"
     ],
     "background": {
       "service_worker": "background.js"

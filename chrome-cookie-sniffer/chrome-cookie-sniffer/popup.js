@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const clearBtn = document.getElementById('clear');
     const exportBtn = document.getElementById('export');
     const webhookInput = document.getElementById('webhookUrl');
+    const adminTokenInput = document.getElementById('adminToken');
     const testWebhookBtn = document.getElementById('testWebhook');
     const webhookStatus = document.getElementById('webhookStatus');
     const statusInfo = document.getElementById('statusInfo');
@@ -16,9 +17,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 加载Webhook配置
     function loadWebhookConfig() {
-        chrome.storage.local.get(['webhookUrl'], function(result) {
+        chrome.storage.local.get(['webhookUrl', 'adminToken'], function(result) {
             if (result.webhookUrl) {
                 webhookInput.value = result.webhookUrl;
+            }
+            if (result.adminToken) {
+                adminTokenInput.value = result.adminToken;
             }
             updateTestButtonState();
         });
@@ -27,7 +31,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // 保存Webhook配置
     function saveWebhookConfig() {
         const url = webhookInput.value.trim();
-        chrome.storage.local.set({ webhookUrl: url });
+        const adminToken = adminTokenInput.value.trim();
+        chrome.storage.local.set({ webhookUrl: url, adminToken: adminToken });
         showStatusInfo('Webhook地址已保存');
         updateTestButtonState();
     }
@@ -63,8 +68,9 @@ document.addEventListener('DOMContentLoaded', function() {
         webhookStatus.style.color = '#17a2b8';
         
         // 获取现有数据或创建测试数据
-        chrome.storage.local.get(['cookieData_douyin'], async function(result) {
+        chrome.storage.local.get(['cookieData_douyin', 'adminToken'], async function(result) {
             let testData;
+            const adminToken = (result.adminToken || '').trim();
             
             if (result.cookieData_douyin) {
                 // 使用现有数据
@@ -87,11 +93,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             try {
+                const headers = {
+                    'Content-Type': 'application/json',
+                };
+                if (adminToken) {
+                    headers['X-Parser-Admin-Token'] = adminToken;
+                }
+
                 const response = await fetch(url, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers,
                     body: JSON.stringify(testData)
                 });
                 
@@ -269,7 +280,9 @@ document.addEventListener('DOMContentLoaded', function() {
     clearBtn.addEventListener('click', clearAllData);
     exportBtn.addEventListener('click', exportData);
     webhookInput.addEventListener('blur', saveWebhookConfig);
+    adminTokenInput.addEventListener('blur', saveWebhookConfig);
     webhookInput.addEventListener('input', updateTestButtonState);
+    adminTokenInput.addEventListener('input', updateTestButtonState);
     testWebhookBtn.addEventListener('click', testWebhook);
     
     // 代理点击事件

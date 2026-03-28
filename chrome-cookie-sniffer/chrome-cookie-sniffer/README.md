@@ -67,8 +67,14 @@ git clone <repository-url>
 
 1. **打开扩展弹窗**
 2. **输入Webhook地址** - 在顶部输入框填入回调URL
-3. **测试连接** - 点击"🔧 测试"按钮验证
-4. **自动回调** - Cookie更新时自动POST到指定地址
+3. **可选输入 Admin Token** - 如果目标地址需要 `X-Parser-Admin-Token` 鉴权，则一并填写
+4. **测试连接** - 点击"🔧 测试"按钮验证
+5. **自动回调** - Cookie更新时自动POST到指定地址
+
+对接 `linker-content` 的受保护 prod 入口时，推荐配置：
+
+- Webhook URL：`https://linker.ballbase.cloud/api/v1/system/parsers/douyin/cookie`
+- Admin Token：prod 中配置的 `PARSER_ADMIN_SYNC_TOKEN`
 
 ### Webhook数据格式
 
@@ -78,6 +84,12 @@ git clone <repository-url>
   "cookie": "具体的Cookie字符串",
   "timestamp": "2025-08-29T12:34:56.789Z"
 }
+```
+
+如果配置了 Admin Token，请求头中还会自动附带：
+
+```text
+X-Parser-Admin-Token: <你的 Admin Token>
 ```
 
 测试时会额外包含：

@@ -83,20 +83,26 @@ async function saveCookieData(serviceName, url, cookie, source = 'headers') {
 
 // Webhook回调
 async function sendWebhook(serviceName, cookie) {
-  chrome.storage.local.get(['webhookUrl'], function(result) {
+  chrome.storage.local.get(['webhookUrl', 'adminToken'], function(result) {
     const webhookUrl = result.webhookUrl;
+    const adminToken = (result.adminToken || '').trim();
     if (webhookUrl && webhookUrl.trim()) {
       const payload = {
         service: serviceName,
         cookie: cookie,
         timestamp: new Date().toISOString()
       };
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (adminToken) {
+        headers['X-Parser-Admin-Token'] = adminToken;
+      }
       
       fetch(webhookUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(payload)
       }).then(response => {
         console.log(`Webhook回调成功: ${serviceName}`, response.status);
